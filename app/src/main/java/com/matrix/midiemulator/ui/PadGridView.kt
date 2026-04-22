@@ -166,23 +166,35 @@ class PadGridView @JvmOverloads constructor(
         val d = resources.displayMetrics.density // Cache density
         val r = 10f * d // Base radius
 
-        // Stronger backlit bloom with soft falloff, closer to a neon edge aura.
-        // These values are relative to the base radius and density.
-        // The spread values and radius additions create the layered glow effect.
-        // The alpha values are chosen to create a soft falloff.
-        // The offsets (e.g., -8f * d) are to extend the glow beyond the rect boundaries.
-        // The radius additions (e.g., r + 14f * d) ensure rounded corners for the glow layers.
+        // 1. Draw the core rectangle (the actual segment) with a solid color.
+        // This will be the "solid red border" from the image.
+        paint.style = Paint.Style.FILL
+        paint.color = withAlpha(color, 255) // Fully opaque for the core rect
+        canvas.drawRoundRect(rect, r, r, paint)
 
-        // Outermost glow layer
-        val spreadOuter = 24f * d
+        // 2. Now draw the glow layers, starting from the innermost glow and moving outwards.
+        // These layers will be drawn *on top* of the core rect, but their RectF coordinates
+        // will extend beyond it, creating the "glow outside" effect.
+
+        // Outermost glow layer (largest spread, lowest alpha)
+        val spreadOuterMost = 40f * d // Significantly larger spread for a wide halo
+        val outerMostRect = if (horizontal) {
+            RectF(rect.left - 12f * d, rect.top - spreadOuterMost, rect.right + 12f * d, rect.bottom + spreadOuterMost)
+        } else {
+            RectF(rect.left - spreadOuterMost, rect.top - 12f * d, rect.right + spreadOuterMost, rect.bottom + 12f * d)
+        }
+        paint.color = withAlpha(color, 10) // Very low opacity for a soft, wide halo
+        canvas.drawRoundRect(outerMostRect, r + 20f * d, r + 20f * d, paint)
+
+        // Outer glow layer
+        val spreadOuter = 25f * d
         val outerRect = if (horizontal) {
             RectF(rect.left - 8f * d, rect.top - spreadOuter, rect.right + 8f * d, rect.bottom + spreadOuter)
         } else {
             RectF(rect.left - spreadOuter, rect.top - 8f * d, rect.right + spreadOuter, rect.bottom + 8f * d)
         }
-        paint.style = Paint.Style.FILL
-        paint.color = withAlpha(color, 18)
-        canvas.drawRoundRect(outerRect, r + 14f * d, r + 14f * d, paint)
+        paint.color = withAlpha(color, 25) // Low opacity
+        canvas.drawRoundRect(outerRect, r + 15f * d, r + 15f * d, paint)
 
         // Middle glow layer
         val spreadMid = 15f * d
@@ -191,23 +203,18 @@ class PadGridView @JvmOverloads constructor(
         } else {
             RectF(rect.left - spreadMid, rect.top - 5f * d, rect.right + spreadMid, rect.bottom + 5f * d)
         }
-        paint.color = withAlpha(color, 36)
+        paint.color = withAlpha(color, 50) // Moderate opacity
         canvas.drawRoundRect(midRect, r + 9f * d, r + 9f * d, paint)
 
-        // Inner glow layer
+        // Innermost glow layer (closest to the core rect)
         val spreadInner = 8f * d
         val innerRect = if (horizontal) {
             RectF(rect.left - 2f * d, rect.top - spreadInner, rect.right + 2f * d, rect.bottom + spreadInner)
         } else {
             RectF(rect.left - spreadInner, rect.top - 2f * d, rect.right + spreadInner, rect.bottom + 2f * d)
         }
-        paint.color = withAlpha(color, 68)
+        paint.color = withAlpha(color, 90) // Higher opacity for inner glow
         canvas.drawRoundRect(innerRect, r + 4f * d, r + 4f * d, paint)
-
-        // Innermost, most opaque layer
-        paint.style = Paint.Style.FILL
-        paint.color = withAlpha(color, 132)
-        canvas.drawRoundRect(rect, r, r, paint)
     }
 
     private fun withAlpha(color: Int, alpha: Int): Int {
