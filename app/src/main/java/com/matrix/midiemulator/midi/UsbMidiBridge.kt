@@ -532,6 +532,7 @@ class UsbMidiBridge(context: Context) {
         val mm = midiManager ?: return
         var recoveredPort: MidiInputPort? = null
         var recoveredDevice: MidiDevice? = null
+        @Suppress("DEPRECATION")
         val infos = mm.devices
 
         var preferred: MidiDeviceInfo? = null

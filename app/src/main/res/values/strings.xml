@@ -1,12 +1,12 @@
 <resources>
-    <string name="app_name">Matrix MIDI Emulator</string>
+    <string name="app_name">Mystrix MIDI Emulator</string>
     <string name="status_disconnected">Disconnected</string>
     <string name="status_connected">Connected to Host</string>
     <string name="hint_connect_usb">Connect USB and select MIDI mode</string>
     <string name="settings_title">Settings</string>
     <string name="settings_open">Settings</string>
     <string name="setting_hide_fn">Hide FN key</string>
-    <string name="setting_hide_title">Hide MYSTRIX title</string>
+    <string name="setting_hide_title">Hide Mystrix title</string>
     <string name="setting_appearance">Appearance</string>
     <string name="setting_show_connection_status">Show Connection Status</string>
     <string name="setting_pages">Pages</string>
