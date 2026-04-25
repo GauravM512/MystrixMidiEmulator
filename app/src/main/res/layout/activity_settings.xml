@@ -47,15 +47,6 @@
             app:useMaterialThemeColors="true" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
-            android:id="@+id/hideTitleSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/setting_hide_title"
-            android:textColor="#FFFFFF"
-            app:useMaterialThemeColors="true" />
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/showConnectionStatusSwitch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -63,6 +54,57 @@
             android:text="@string/setting_show_connection_status"
             android:textColor="#FFFFFF"
             app:useMaterialThemeColors="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/setting_effect_brightness"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/brightnessValueText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/setting_brightness_value"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <SeekBar
+            android:id="@+id/brightnessSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:max="200"
+            android:progress="100" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="#8C8C8C"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/resetBrightnessButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/setting_brightness_reset" />
+
+        <com.matrix.midiemulator.ui.PadGridView
+            android:id="@+id/brightnessPreviewGrid"
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="14dp"
+            android:background="#101010"
+            android:clickable="false"
+            android:focusable="false" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

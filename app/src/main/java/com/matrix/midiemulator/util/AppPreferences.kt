@@ -9,6 +9,10 @@ object AppPreferences {
     private const val KEY_SELECTED_PAGE = "selected_page"
     private const val KEY_ACTIVE_PALETTE_SLOT = "active_palette_slot"
     private const val KEY_PALETTE_IMPORT_SLOT = "palette_import_slot"
+    private const val KEY_LED_BRIGHTNESS_PERCENT = "led_brightness_percent"
+    private const val KEY_ENABLE_BRIGHTNESS_BOOST = "enable_brightness_boost"
+    private const val KEY_PAD_BRIGHTNESS_PERCENT = "pad_brightness_percent"
+    private const val KEY_ENABLE_PAD_BRIGHTNESS = "enable_pad_brightness"
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -34,6 +38,38 @@ object AppPreferences {
 
     fun setPaletteImportSlot(context: Context, slot: Int) {
         prefs(context).edit().putInt(KEY_PALETTE_IMPORT_SLOT, slot.coerceIn(1, 4)).apply()
+    }
+
+    fun getLedBrightnessPercent(context: Context): Int {
+        return prefs(context).getInt(KEY_LED_BRIGHTNESS_PERCENT, 100).coerceIn(0, 200)
+    }
+
+    fun setLedBrightnessPercent(context: Context, percent: Int) {
+        prefs(context).edit().putInt(KEY_LED_BRIGHTNESS_PERCENT, percent.coerceIn(0, 200)).apply()
+    }
+
+    fun isBrightnessBoostEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_ENABLE_BRIGHTNESS_BOOST, false)
+    }
+
+    fun setBrightnessBoostEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_ENABLE_BRIGHTNESS_BOOST, enabled).apply()
+    }
+
+    fun getPadBrightnessPercent(context: Context): Int {
+        return prefs(context).getInt(KEY_PAD_BRIGHTNESS_PERCENT, 100).coerceIn(0, 200)
+    }
+
+    fun setPadBrightnessPercent(context: Context, percent: Int) {
+        prefs(context).edit().putInt(KEY_PAD_BRIGHTNESS_PERCENT, percent.coerceIn(0, 200)).apply()
+    }
+
+    fun isPadBrightnessEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_ENABLE_PAD_BRIGHTNESS, false)
+    }
+
+    fun setPadBrightnessEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_ENABLE_PAD_BRIGHTNESS, enabled).apply()
     }
     
     fun isFnVisible(context: Context): Boolean {

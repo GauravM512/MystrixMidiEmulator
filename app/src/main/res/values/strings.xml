@@ -6,9 +6,12 @@
     <string name="settings_title">Settings</string>
     <string name="settings_open">Settings</string>
     <string name="setting_hide_fn">Hide FN key</string>
-    <string name="setting_hide_title">Hide Mystrix title</string>
     <string name="setting_appearance">Appearance</string>
     <string name="setting_show_connection_status">Show Connection Status</string>
+    <string name="setting_effect_brightness">Light brightness</string>
+    <string name="setting_brightness_value">Light brightness: %1$d%%</string>
+    <string name="setting_brightness_hint">Adjust LED intensity for pads and edge lights together. 100%% is normal; increase above 100%% for extra punch.</string>
+    <string name="setting_brightness_reset">Reset brightness to default</string>
     <string name="setting_pages">Pages</string>
     <string name="setting_palette">Palette</string>
     <string name="setting_palette_source">Active palette source</string>

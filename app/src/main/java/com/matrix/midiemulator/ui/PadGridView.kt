@@ -4,7 +4,9 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RadialGradient
 import android.graphics.RectF
+import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -61,6 +63,7 @@ class PadGridView @JvmOverloads constructor(
     private var cellWidth = 0f
     private var cellHeight = 0f
     private var gap = 0f
+    private var effectBrightnessScale = 1f
 
     /** Callback for MIDI events */
     var onPadEventListener: PadEventListener? = null
@@ -106,10 +109,32 @@ class PadGridView @JvmOverloads constructor(
 
                 padRect.set(left, top, left + cellWidth, top + cellHeight)
 
-                // Draw pad background color
-                paint.color = padColors[note]
-                paint.style = Paint.Style.FILL
+                val litPadColor = applyPadBrightness(padColors[note])
                 val radius = 8f * resources.displayMetrics.density
+
+                val padScale = currentPadBrightnessScale()
+                if (padScale > 1f && padColors[note] != LedPalette.OFF_COLOR) {
+                    val boost = (padScale - 1f).coerceIn(0f, 1f)
+                    val cx = padRect.centerX()
+                    val cy = padRect.centerY()
+                    val bloomRadius = (maxOf(cellWidth, cellHeight) * (0.58f + boost * 0.55f)).coerceAtLeast(1f)
+                    val bloomAlpha = (28 + boost * 78f).toInt().coerceIn(0, 255)
+                    paint.shader = RadialGradient(
+                        cx,
+                        cy,
+                        bloomRadius,
+                        withAlpha(litPadColor, bloomAlpha),
+                        withAlpha(litPadColor, 0),
+                        Shader.TileMode.CLAMP
+                    )
+                    paint.style = Paint.Style.FILL
+                    canvas.drawCircle(cx, cy, bloomRadius, paint)
+                    paint.shader = null
+                }
+
+                // Draw pad background color
+                paint.color = litPadColor
+                paint.style = Paint.Style.FILL
                 canvas.drawRoundRect(padRect, radius, radius, paint)
 
                 // Draw press highlight border
@@ -172,6 +197,7 @@ class PadGridView @JvmOverloads constructor(
 
         val d = resources.displayMetrics.density // Cache density
         val r = 10f * d // Base radius
+        val litColor = applyEffectBrightness(color)
 
         // Outside glow only: all layers expand away from the grid.
         fun outwardRect(rect: RectF, along: Float, across: Float): RectF {
@@ -185,27 +211,27 @@ class PadGridView @JvmOverloads constructor(
 
         // Draw source strip first, then outward glow layers.
         paint.style = Paint.Style.FILL
-        paint.color = withAlpha(color, 255)
+        paint.color = withAlpha(litColor, scaledAlpha(255))
         canvas.drawRoundRect(rect, r, r, paint)
 
         val spreadOuterMost = 40f * d
         val outerMostRect = outwardRect(rect, spreadOuterMost, 12f * d)
-        paint.color = withAlpha(color, 10)
+        paint.color = withAlpha(litColor, scaledAlpha(10))
         canvas.drawRoundRect(outerMostRect, r + 20f * d, r + 20f * d, paint)
 
         val spreadOuter = 25f * d
         val outerRect = outwardRect(rect, spreadOuter, 8f * d)
-        paint.color = withAlpha(color, 25)
+        paint.color = withAlpha(litColor, scaledAlpha(25))
         canvas.drawRoundRect(outerRect, r + 15f * d, r + 15f * d, paint)
 
         val spreadMid = 15f * d
         val midRect = outwardRect(rect, spreadMid, 5f * d)
-        paint.color = withAlpha(color, 50)
+        paint.color = withAlpha(litColor, scaledAlpha(50))
         canvas.drawRoundRect(midRect, r + 9f * d, r + 9f * d, paint)
 
         val spreadInner = 8f * d
         val innerRect = outwardRect(rect, spreadInner, 2f * d)
-        paint.color = withAlpha(color, 90)
+        paint.color = withAlpha(litColor, scaledAlpha(90))
         canvas.drawRoundRect(innerRect, r + 4f * d, r + 4f * d, paint)
     }
 
@@ -216,6 +242,54 @@ class PadGridView @JvmOverloads constructor(
             Color.green(color),
             Color.blue(color)
         )
+    }
+
+    private fun applyEffectBrightness(color: Int): Int {
+        if (effectBrightnessScale >= 0.999f && effectBrightnessScale <= 1.001f) return color
+
+        val factor = if (effectBrightnessScale <= 1f) {
+            0.35f + (effectBrightnessScale * 0.65f)
+        } else {
+            1f + ((effectBrightnessScale - 1f) * 0.20f).coerceAtMost(0.25f)
+        }
+
+        return Color.argb(
+            Color.alpha(color),
+            (Color.red(color) * factor).toInt().coerceIn(0, 255),
+            (Color.green(color) * factor).toInt().coerceIn(0, 255),
+            (Color.blue(color) * factor).toInt().coerceIn(0, 255)
+        )
+    }
+
+    private fun scaledAlpha(baseAlpha: Int): Int {
+        val factor = if (effectBrightnessScale <= 1f) {
+            0.35f + (effectBrightnessScale * 0.65f)
+        } else {
+            1f + ((effectBrightnessScale - 1f) * 0.15f).coerceAtMost(0.20f)
+        }
+        return (baseAlpha * factor).toInt().coerceIn(0, 255)
+    }
+
+    private fun applyPadBrightness(color: Int): Int {
+        val scale = currentPadBrightnessScale()
+        if (scale >= 0.999f && scale <= 1.001f) return color
+
+        val factor = if (scale <= 1f) {
+            0.40f + (scale * 0.60f)
+        } else {
+            1f + ((scale - 1f) * 0.50f).coerceAtMost(0.35f)
+        }
+
+        return Color.argb(
+            Color.alpha(color),
+            (Color.red(color) * factor).toInt().coerceIn(0, 255),
+            (Color.green(color) * factor).toInt().coerceIn(0, 255),
+            (Color.blue(color) * factor).toInt().coerceIn(0, 255)
+        )
+    }
+
+    private fun currentPadBrightnessScale(): Float {
+        return effectBrightnessScale
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -371,6 +445,25 @@ class PadGridView @JvmOverloads constructor(
             edgeColors[index] = color
             invalidate()
         }
+    }
+
+    fun setLedBrightnessPercent(percent: Int) {
+        effectBrightnessScale = percent.coerceIn(0, 200) / 100f
+        invalidate()
+    }
+
+    fun setEffectBrightnessPercent(percent: Int) {
+        setLedBrightnessPercent(percent)
+    }
+
+    fun setPadBrightnessEnabled(@Suppress("UNUSED_PARAMETER") enabled: Boolean) {
+        // Kept for compatibility; pad brightness now follows the unified light brightness.
+        invalidate()
+    }
+
+    fun setPadBrightnessPercent(@Suppress("UNUSED_PARAMETER") percent: Int) {
+        // Kept for compatibility; use setEffectBrightnessPercent for unified behavior.
+        invalidate()
     }
 
     private fun mapNoteToEdgeSegmentIndex(note: Int): Int {

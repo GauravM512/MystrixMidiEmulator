@@ -146,6 +146,7 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
     private fun applyUserPreferences() {
         deviceNameText.visibility = View.GONE
         fnButtonContainer.visibility = if (AppPreferences.isFnVisible(this)) View.VISIBLE else View.GONE
+        padGrid.setEffectBrightnessPercent(AppPreferences.getLedBrightnessPercent(this))
         if (::touchbar.isInitialized) {
             touchbar.setSelectedPage(AppPreferences.getSelectedPage(this))
         }

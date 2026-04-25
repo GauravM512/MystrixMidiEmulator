@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.SeekBar
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,8 +36,18 @@ class SettingsActivity : AppCompatActivity() {
         val paletteSourceSpinner = findViewById<Spinner>(R.id.paletteSourceSpinner)
         val paletteImportSlotSpinner = findViewById<Spinner>(R.id.paletteImportSlotSpinner)
         val importPaletteButton = findViewById<Button>(R.id.importPaletteButton)
+        val resetBrightnessButton = findViewById<Button>(R.id.resetBrightnessButton)
+        val brightnessSeekBar = findViewById<SeekBar>(R.id.brightnessSeekBar)
+        val brightnessValueText = findViewById<TextView>(R.id.brightnessValueText)
+        val brightnessPreviewGrid = findViewById<PadGridView>(R.id.brightnessPreviewGrid)
         hideFnSwitch.isChecked = !AppPreferences.isFnVisible(this)
         showConnectionStatusSwitch.isChecked = AppPreferences.isConnectionStatusVisible(this)
+        val currentEffectBrightness = AppPreferences.getLedBrightnessPercent(this).coerceIn(0, 200)
+        setupBrightnessPreview(brightnessPreviewGrid)
+        brightnessPreviewGrid.setEffectBrightnessPercent(currentEffectBrightness)
+        brightnessSeekBar.max = 200
+        brightnessSeekBar.progress = currentEffectBrightness
+        brightnessValueText.text = getString(R.string.setting_brightness_value, currentEffectBrightness)
 
         val paletteSources = listOf(
             getString(R.string.setting_palette_source_app_default),
@@ -68,6 +80,25 @@ class SettingsActivity : AppCompatActivity() {
         
         showConnectionStatusSwitch.setOnCheckedChangeListener { _, isChecked ->
             AppPreferences.setConnectionStatusVisible(this, isChecked)
+        }
+
+        brightnessSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                AppPreferences.setLedBrightnessPercent(this@SettingsActivity, progress)
+                brightnessValueText.text = getString(R.string.setting_brightness_value, progress)
+                brightnessPreviewGrid.setEffectBrightnessPercent(progress)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) = Unit
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) = Unit
+        })
+
+        resetBrightnessButton.setOnClickListener {
+            AppPreferences.setLedBrightnessPercent(this, 100)
+            brightnessSeekBar.progress = 100
+            brightnessValueText.text = getString(R.string.setting_brightness_value, 100)
+            brightnessPreviewGrid.setEffectBrightnessPercent(100)
         }
 
         paletteSourceSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
@@ -114,6 +145,22 @@ class SettingsActivity : AppCompatActivity() {
         importPaletteButton.setOnClickListener {
             openPaletteFile.launch(arrayOf("text/*", "*/*"))
         }
+    }
+
+    private fun setupBrightnessPreview(previewGrid: PadGridView) {
+        previewGrid.setOnTouchListener { _, _ -> true }
+        previewGrid.clearAll()
+
+        // Add a few lit pads for intensity preview.
+        previewGrid.setPadColor(45, 0xFF6CFF6C.toInt())
+        previewGrid.setPadColor(54, 0xFFFF5A5A.toInt())
+        previewGrid.setPadColor(63, 0xFF59A8FF.toInt())
+
+        // Light up all edge segments so frame brightness can be judged immediately.
+        for (note in 28..35) previewGrid.setEdgeSegmentColor(note, 0xFFFF3A3A.toInt())
+        for (note in 100..107) previewGrid.setEdgeSegmentColor(note, 0xFFFF3A3A.toInt())
+        for (note in 108..115) previewGrid.setEdgeSegmentColor(note, 0xFFFF3A3A.toInt())
+        for (note in 116..123) previewGrid.setEdgeSegmentColor(note, 0xFFFF3A3A.toInt())
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
