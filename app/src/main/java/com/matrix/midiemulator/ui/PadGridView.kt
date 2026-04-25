@@ -23,6 +23,13 @@ class PadGridView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    private enum class EdgeSide {
+        TOP,
+        BOTTOM,
+        LEFT,
+        RIGHT
+    }
+
     companion object {
         private const val GRID_ROWS = NoteMap.GRID_ROWS
         private const val GRID_COLS = NoteMap.GRID_COLS
@@ -128,7 +135,7 @@ class PadGridView @JvmOverloads constructor(
             val cellRight = cellLeft + cellWidth
 
             val topRect = RectF(cellLeft, 0f, cellRight, edgeBand)
-            drawGlowRect(canvas, topRect, edgeColors[i], horizontal = true) // edgeColors[0] to edgeColors[7]
+            drawGlowRect(canvas, topRect, edgeColors[i], EdgeSide.TOP) // edgeColors[0] to edgeColors[7]
         }
 
         // Bottom: notes 116-123, right -> left (indices 16-23 in edgeColors)
@@ -137,7 +144,7 @@ class PadGridView @JvmOverloads constructor(
             val cellRight = cellLeft + cellWidth
             val bottomRect = RectF(cellLeft, height - edgeBand, cellRight, height.toFloat())
             // Visual segment i (0=left, 7=right) corresponds to edgeColors[23 - i]
-            drawGlowRect(canvas, bottomRect, edgeColors[23 - i], horizontal = true) // edgeColors[23] to edgeColors[16]
+            drawGlowRect(canvas, bottomRect, edgeColors[23 - i], EdgeSide.BOTTOM) // edgeColors[23] to edgeColors[16]
         }
 
         // Right: notes 100-107, top -> bottom (indices 8-15 in edgeColors)
@@ -147,7 +154,7 @@ class PadGridView @JvmOverloads constructor(
 
             val rightRect = RectF(rightMost, cellTop, width.toFloat(), cellBottom)
             // Visual segment visualRow (0=top, 7=bottom) corresponds to edgeColors[visualRow + 8]
-            drawGlowRect(canvas, rightRect, edgeColors[visualRow + 8], horizontal = false) // edgeColors[8] to edgeColors[15]
+            drawGlowRect(canvas, rightRect, edgeColors[visualRow + 8], EdgeSide.RIGHT) // edgeColors[8] to edgeColors[15]
         }
 
         // Left: notes 108-115, bottom -> top (indices 24-31 in edgeColors)
@@ -156,64 +163,49 @@ class PadGridView @JvmOverloads constructor(
             val cellBottom = cellTop + cellHeight
             val leftRect = RectF(0f, cellTop, leftMost, cellBottom)
             // Visual segment visualRow (0=top, 7=bottom) corresponds to edgeColors[31 - visualRow]
-            drawGlowRect(canvas, leftRect, edgeColors[31 - visualRow], horizontal = false) // edgeColors[31] to edgeColors[24]
+            drawGlowRect(canvas, leftRect, edgeColors[31 - visualRow], EdgeSide.LEFT) // edgeColors[31] to edgeColors[24]
         }
     }
 
-    private fun drawGlowRect(canvas: Canvas, rect: RectF, color: Int, horizontal: Boolean) {
+    private fun drawGlowRect(canvas: Canvas, rect: RectF, color: Int, side: EdgeSide) {
         if (color == LedPalette.OFF_COLOR) return
 
         val d = resources.displayMetrics.density // Cache density
         val r = 10f * d // Base radius
 
-        // 1. Draw the core rectangle (the actual segment) with a solid color.
-        // This will be the "solid red border" from the image.
+        // Outside glow only: all layers expand away from the grid.
+        fun outwardRect(rect: RectF, along: Float, across: Float): RectF {
+            return when (side) {
+                EdgeSide.TOP -> RectF(rect.left - across, rect.top - along, rect.right + across, rect.bottom)
+                EdgeSide.BOTTOM -> RectF(rect.left - across, rect.top, rect.right + across, rect.bottom + along)
+                EdgeSide.LEFT -> RectF(rect.left - along, rect.top - across, rect.right, rect.bottom + across)
+                EdgeSide.RIGHT -> RectF(rect.left, rect.top - across, rect.right + along, rect.bottom + across)
+            }
+        }
+
+        // Draw source strip first, then outward glow layers.
         paint.style = Paint.Style.FILL
-        paint.color = withAlpha(color, 255) // Fully opaque for the core rect
+        paint.color = withAlpha(color, 255)
         canvas.drawRoundRect(rect, r, r, paint)
 
-        // 2. Now draw the glow layers, starting from the innermost glow and moving outwards.
-        // These layers will be drawn *on top* of the core rect, but their RectF coordinates
-        // will extend beyond it, creating the "glow outside" effect.
-
-        // Outermost glow layer (largest spread, lowest alpha)
-        val spreadOuterMost = 40f * d // Significantly larger spread for a wide halo
-        val outerMostRect = if (horizontal) {
-            RectF(rect.left - 12f * d, rect.top - spreadOuterMost, rect.right + 12f * d, rect.bottom + spreadOuterMost)
-        } else {
-            RectF(rect.left - spreadOuterMost, rect.top - 12f * d, rect.right + spreadOuterMost, rect.bottom + 12f * d)
-        }
-        paint.color = withAlpha(color, 10) // Very low opacity for a soft, wide halo
+        val spreadOuterMost = 40f * d
+        val outerMostRect = outwardRect(rect, spreadOuterMost, 12f * d)
+        paint.color = withAlpha(color, 10)
         canvas.drawRoundRect(outerMostRect, r + 20f * d, r + 20f * d, paint)
 
-        // Outer glow layer
         val spreadOuter = 25f * d
-        val outerRect = if (horizontal) {
-            RectF(rect.left - 8f * d, rect.top - spreadOuter, rect.right + 8f * d, rect.bottom + spreadOuter)
-        } else {
-            RectF(rect.left - spreadOuter, rect.top - 8f * d, rect.right + spreadOuter, rect.bottom + 8f * d)
-        }
-        paint.color = withAlpha(color, 25) // Low opacity
+        val outerRect = outwardRect(rect, spreadOuter, 8f * d)
+        paint.color = withAlpha(color, 25)
         canvas.drawRoundRect(outerRect, r + 15f * d, r + 15f * d, paint)
 
-        // Middle glow layer
         val spreadMid = 15f * d
-        val midRect = if (horizontal) {
-            RectF(rect.left - 5f * d, rect.top - spreadMid, rect.right + 5f * d, rect.bottom + spreadMid)
-        } else {
-            RectF(rect.left - spreadMid, rect.top - 5f * d, rect.right + spreadMid, rect.bottom + 5f * d)
-        }
-        paint.color = withAlpha(color, 50) // Moderate opacity
+        val midRect = outwardRect(rect, spreadMid, 5f * d)
+        paint.color = withAlpha(color, 50)
         canvas.drawRoundRect(midRect, r + 9f * d, r + 9f * d, paint)
 
-        // Innermost glow layer (closest to the core rect)
         val spreadInner = 8f * d
-        val innerRect = if (horizontal) {
-            RectF(rect.left - 2f * d, rect.top - spreadInner, rect.right + 2f * d, rect.bottom + spreadInner)
-        } else {
-            RectF(rect.left - spreadInner, rect.top - 2f * d, rect.right + spreadInner, rect.bottom + 2f * d)
-        }
-        paint.color = withAlpha(color, 90) // Higher opacity for inner glow
+        val innerRect = outwardRect(rect, spreadInner, 2f * d)
+        paint.color = withAlpha(color, 90)
         canvas.drawRoundRect(innerRect, r + 4f * d, r + 4f * d, paint)
     }
 
