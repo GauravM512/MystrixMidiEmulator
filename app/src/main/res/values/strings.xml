@@ -12,6 +12,7 @@
     <string name="setting_layout_mode">Layout mode</string>
     <string name="setting_layout_mystrix">Mystrix</string>
     <string name="setting_layout_launchpad_pro_mk2">Launchpad Pro</string>
+    <string name="setting_layout_launchpad_x">Launchpad X</string>
     <string name="setting_layout_mode_success">Layout set to %1$s</string>
     <string name="setting_effect_brightness">Light brightness</string>
     <string name="setting_brightness_value">Light brightness: %1$d%%</string>

@@ -154,16 +154,16 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
     private fun applyUserPreferences() {
         val layoutMode = AppPreferences.getLayoutMode(this)
         val isLaunchpadLayout = layoutMode == AppPreferences.LAYOUT_MODE_LAUNCHPAD_PRO_MK2
+        val isLaunchpadXLayout = layoutMode == AppPreferences.LAYOUT_MODE_LAUNCHPAD_X
 
         deviceNameText.visibility = View.GONE
-        padGrid.setCircularPadMode(isLaunchpadLayout)
-        padGrid.setShowEdgeLights(!isLaunchpadLayout)
+        padGrid.setLayoutMode(layoutMode)
 
-        touchbarContainer.visibility = if (isLaunchpadLayout) View.GONE else View.VISIBLE
+        touchbarContainer.visibility = if (isLaunchpadLayout || isLaunchpadXLayout) View.GONE else View.VISIBLE
 
         padGrid.setEffectBrightnessPercent(AppPreferences.getLedBrightnessPercent(this))
         applyLandscapePadsPreference()
-        if (!isLaunchpadLayout && ::touchbar.isInitialized) {
+        if (!isLaunchpadLayout && !isLaunchpadXLayout && ::touchbar.isInitialized) {
             touchbar.setSelectedPage(AppPreferences.getSelectedPage(this))
         }
         val showStatus = AppPreferences.isConnectionStatusVisible(this)
