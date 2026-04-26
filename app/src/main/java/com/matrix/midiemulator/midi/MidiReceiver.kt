@@ -196,7 +196,8 @@ class MidiReceiver(
 
     /** Helper to check if a note corresponds to an edge segment. */
     private fun isEdgeNote(note: Int): Boolean {
-        return (note in 28..35 || // Top edge
+        return (note == 27 ||      // Launchpad top-right corner
+            note in 28..35 || // Top edge
                 note in 100..107 || // Right edge
                 note in 108..115 || // Left edge
                 note in 116..123)    // Bottom edge

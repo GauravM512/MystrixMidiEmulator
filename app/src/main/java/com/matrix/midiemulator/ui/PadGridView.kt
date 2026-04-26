@@ -45,6 +45,9 @@ class PadGridView @JvmOverloads constructor(
     /** Edge backlight colors for the 32 edge segments */
     private val edgeColors = IntArray(EDGE_SEGMENT_COUNT) { LedPalette.OFF_COLOR }
 
+    /** Launchpad top-right corner button (note 27) */
+    private var cornerTopRightColor = LedPalette.OFF_COLOR
+
     /** Whether each pad is currently pressed */
     private val padPressed = BooleanArray(128) { false }
 
@@ -217,12 +220,55 @@ class PadGridView @JvmOverloads constructor(
             val cy = gridInnerTop() + i * (cellHeight + gap) + cellHeight / 2f
             drawLaunchpadSideButton(canvas, 100 + i, rightX, cy)
         }
+
+        // Top-right corner: note 27
+        drawLaunchpadSideButton(canvas, 27, rightX, topY)
     }
 
     private fun drawLaunchpadSideButton(canvas: Canvas, note: Int, cx: Float, cy: Float) {
         val index = mapNoteToEdgeSegmentIndex(note)
-        val edgeColor = if (index != -1) edgeColors[index] else LedPalette.OFF_COLOR
+        val edgeColor = when {
+            note == 27 -> cornerTopRightColor
+            index != -1 -> edgeColors[index]
+            else -> LedPalette.OFF_COLOR
+        }
         val d = resources.displayMetrics.density
+
+        if (note == 27) {
+            // Corner note 27 is intentionally a plain circle (no ring) to differentiate it.
+            if (edgeColor == LedPalette.OFF_COLOR) {
+                paint.shader = null
+                paint.style = Paint.Style.FILL
+                paint.color = 0xFF5F6771.toInt()
+                canvas.drawCircle(cx, cy, edgeButtonRadius * 0.80f, paint)
+            } else {
+                val litColor = applyEffectBrightness(edgeColor)
+                val glowRadius = edgeButtonRadius * 1.65f
+                paint.shader = RadialGradient(
+                    cx,
+                    cy,
+                    glowRadius,
+                    withAlpha(litColor, scaledAlpha(80)),
+                    withAlpha(litColor, 0),
+                    Shader.TileMode.CLAMP
+                )
+                paint.style = Paint.Style.FILL
+                canvas.drawCircle(cx, cy, glowRadius, paint)
+                paint.shader = null
+
+                paint.style = Paint.Style.FILL
+                paint.color = withAlpha(litColor, 245)
+                canvas.drawCircle(cx, cy, edgeButtonRadius * 0.80f, paint)
+            }
+
+            if (padPressed[note]) {
+                paint.style = Paint.Style.STROKE
+                paint.strokeWidth = 2f * d
+                paint.color = 0xAAFFFFFF.toInt()
+                canvas.drawCircle(cx, cy, edgeButtonRadius * 0.58f, paint)
+            }
+            return
+        }
 
         // Dark center disk (consistent for OFF and ON states)
         paint.shader = null
@@ -500,6 +546,7 @@ class PadGridView @JvmOverloads constructor(
         val rightX = gridInnerRight() + edgeButtonRadius + gap * 0.8f
 
         return when (note) {
+            27 -> Pair(rightX, topY)
             in 28..35 -> {
                 val i = note - 28
                 Pair(padLeftForCol(i) + cellWidth / 2f, topY)
@@ -616,6 +663,12 @@ class PadGridView @JvmOverloads constructor(
      * Set edge backlight color for a given MIDI note.
      */
     fun setEdgeSegmentColor(note: Int, color: Int) {
+        if (note == 27) {
+            cornerTopRightColor = color
+            invalidate()
+            return
+        }
+
         val index = mapNoteToEdgeSegmentIndex(note)
         if (index != -1) {
             edgeColors[index] = color
@@ -670,6 +723,7 @@ class PadGridView @JvmOverloads constructor(
     fun clearAll() {
         padColors.fill(LedPalette.OFF_COLOR)
         edgeColors.fill(LedPalette.OFF_COLOR)
+        cornerTopRightColor = LedPalette.OFF_COLOR
         invalidate()
     }
 }
