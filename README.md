@@ -2,6 +2,31 @@
 
 An Android application that emulates a **Mystrix** hardware MIDI controller (by 203 Systems) using Android's USB MIDI peripheral mode. When connected to a PC via USB, the phone appears as a Mystrix MIDI device that can send and receive MIDI signals.
 
+## App Screenshots
+
+<table>
+  <tr>
+     <td align="center">
+      <img src="https://i.ibb.co/Zz6WFngR/launchpad-pro-layout.jpg" width="350"><br>
+      <sub><b>Launchpad Pro</b></sub>
+    </td> 
+    <td align="center">
+      <img src="https://i.ibb.co/BV2xqMYb/mystrix-layout.jpg" width="350"><br>
+      <sub><b>Mystrix Layout</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://i.ibb.co/8nt0L1NX/launchpad-x-layout.jpg" width="350"><br>
+      <sub><b>Launchpad X</b></sub>
+    </td>
+   <td align="center">
+      <img src="https://i.ibb.co/33zN5Mf/settings.png" width="350"><br>
+      <sub><b>Settings</b></sub>
+    </td> 
+  </tr>
+</table>
+
 ## Features
 
 - **8x8 pad grid** matching the Mystrix hardware layout
