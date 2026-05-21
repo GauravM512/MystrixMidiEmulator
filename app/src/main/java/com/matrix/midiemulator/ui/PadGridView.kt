@@ -74,14 +74,22 @@ class PadGridView @JvmOverloads constructor(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val size = min(
-            MeasureSpec.getSize(widthMeasureSpec),
-            MeasureSpec.getSize(heightMeasureSpec)
-        )
-        super.onMeasure(
-            MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY),
-            MeasureSpec.makeMeasureSpec(size, MeasureSpec.EXACTLY)
-        )
+        val measuredWidth = availableSize(widthMeasureSpec, suggestedMinimumWidth)
+        val measuredHeight = availableSize(heightMeasureSpec, suggestedMinimumHeight)
+        val size = when {
+            measuredWidth <= 0 -> measuredHeight
+            measuredHeight <= 0 -> measuredWidth
+            else -> min(measuredWidth, measuredHeight)
+        }
+
+        setMeasuredDimension(size, size)
+    }
+
+    private fun availableSize(measureSpec: Int, fallback: Int): Int {
+        return when (MeasureSpec.getMode(measureSpec)) {
+            MeasureSpec.EXACTLY, MeasureSpec.AT_MOST -> MeasureSpec.getSize(measureSpec)
+            else -> fallback
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

@@ -60,7 +60,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintWidth_percent="0.92"
+        app:layout_constraintWidth_percent="0.82"
         app:layout_constraintWidth_max="@dimen/pad_grid_max_size"
         app:layout_constraintHeight_max="@dimen/pad_grid_max_size"
         android:layout_marginTop="12dp"/>
