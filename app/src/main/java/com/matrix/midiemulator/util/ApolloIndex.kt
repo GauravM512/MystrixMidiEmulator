@@ -17,7 +17,7 @@ object ApolloIndex {
      * Returns null for global fill (index 0), row/column fills, or invalid indices.
      */
     fun toNote(index: Int): Int? {
-        if (index < 0 || index > 119) return null
+        if (index !in 0..119) return null
         if (index == 0 || isRowFill(index) || isColumnFill(index)) return null
 
         val x = index % 10 - 1
