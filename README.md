@@ -45,7 +45,6 @@ An Android application that emulates a **Mystrix** hardware MIDI controller (by 
 ## Requirements
 
 - Android 6.0 (API 23) or higher
-- USB OTG support (for connecting to PC as MIDI peripheral)
 - USB cable that supports data transfer
 
 ## Palettes
