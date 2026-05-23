@@ -5,15 +5,20 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.MenuItem
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -77,16 +82,24 @@ class SettingsActivity : AppCompatActivity() {
         layoutModeSpinner.setSelection(AppPreferences.getLayoutMode(this))
         suppressLayoutModeChange = false
 
-        val paletteSources = listOf(
+        fun buildPaletteSources() = mutableListOf(
             getString(R.string.setting_palette_source_app_default),
             getString(R.string.setting_palette_source_mat1),
-            getString(R.string.setting_palette_source_slot, 1),
-            getString(R.string.setting_palette_source_slot, 2),
-            getString(R.string.setting_palette_source_slot, 3),
-            getString(R.string.setting_palette_source_slot, 4)
+            PaletteStore.getSlotDisplayName(this, 0),
+            PaletteStore.getSlotDisplayName(this, 1),
+            PaletteStore.getSlotDisplayName(this, 2),
+            PaletteStore.getSlotDisplayName(this, 3)
         )
-        paletteSourceSpinner.adapter = ArrayAdapter(this, R.layout.spinner_item_light, paletteSources).apply {
+
+        val paletteSources = buildPaletteSources()
+        val paletteSourceAdapter = ArrayAdapter(this, R.layout.spinner_item_light, paletteSources).apply {
             setDropDownViewResource(R.layout.spinner_item_dropdown_light)
+        }
+        paletteSourceSpinner.adapter = paletteSourceAdapter
+        fun refreshPaletteSources() {
+            paletteSources.clear()
+            paletteSources.addAll(buildPaletteSources())
+            paletteSourceAdapter.notifyDataSetChanged()
         }
         suppressSourceChange = true
         paletteSourceSpinner.setSelection(AppPreferences.getActivePaletteSlot(this))
@@ -179,6 +192,31 @@ class SettingsActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: android.widget.AdapterView<*>) = Unit
         }
 
+        paletteSourceSpinner.setOnLongClickListener {
+            val position = paletteSourceSpinner.selectedItemPosition
+            if (position !in 2..5) {
+                Toast.makeText(this, getString(R.string.setting_palette_rename_select_slot), Toast.LENGTH_SHORT).show()
+                return@setOnLongClickListener true
+            }
+
+            val slotId = position - 2
+            if (PaletteStore.isSlotEmpty(this, slotId)) {
+                AppPreferences.setActivePaletteSlot(this, 0)
+                PaletteStore.applySelectedPalette(this)
+                suppressSourceChange = true
+                paletteSourceSpinner.setSelection(0)
+                suppressSourceChange = false
+                Toast.makeText(this, getString(R.string.setting_palette_empty), Toast.LENGTH_SHORT).show()
+                return@setOnLongClickListener true
+            }
+
+            showPaletteRenameDialog(slotId, paletteSources[position]) {
+                refreshPaletteSources()
+                Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+            }
+            true
+        }
+
         paletteImportSlotSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
                 if (AppPreferences.getPaletteImportSlot(this@SettingsActivity) == position + 1) return
@@ -203,6 +241,7 @@ class SettingsActivity : AppCompatActivity() {
                     if (AppPreferences.getActivePaletteSlot(this) == slotId) {
                         PaletteRuntime.setActiveColors(palette.colors, isCustom = true)
                     }
+                    refreshPaletteSources()
                     Toast.makeText(this, getString(R.string.setting_palette_import_success, slotId), Toast.LENGTH_SHORT).show()
                 } ?: throw IllegalStateException("Could not open file")
             } catch (e: Exception) {
@@ -218,6 +257,54 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         SystemUiMode.applyImmersiveMode(this, AppPreferences.isImmersiveModeEnabled(this))
+    }
+
+    private fun showPaletteRenameDialog(slotId: Int, currentDisplayName: String, onRenamed: (String) -> Unit) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_rename_palette, null)
+        val title = dialogView.findViewById<TextView>(R.id.renamePaletteTitle)
+        val themedInput = dialogView.findViewById<EditText>(R.id.renamePaletteInput)
+        val cancelButton = dialogView.findViewById<Button>(R.id.renamePaletteCancelButton)
+        val saveButton = dialogView.findViewById<Button>(R.id.renamePaletteSaveButton)
+
+        title.text = getString(R.string.setting_palette_rename_title, slotId + 1)
+        themedInput.setText(PaletteStore.baseRenameName(currentDisplayName, slotId))
+        themedInput.selectAll()
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        cancelButton.setOnClickListener {
+            dialog.dismiss()
+        }
+        saveButton.setOnClickListener {
+            val newName = themedInput.text.toString()
+            if (PaletteStore.renameSlot(this, slotId, newName) == null) {
+                Toast.makeText(this, getString(R.string.setting_palette_rename_failed), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val message = if (newName.isBlank()) {
+                getString(R.string.setting_palette_rename_empty)
+            } else {
+                getString(R.string.setting_palette_rename_success, PaletteStore.getSlotDisplayName(this, slotId))
+            }
+            dialog.dismiss()
+            onRenamed(message)
+        }
+        dialog.show()
+        val maxWidth = dpToPx(520)
+        val sideMargin = dpToPx(32)
+        val availableWidth = resources.displayMetrics.widthPixels - sideMargin
+        dialog.window?.setLayout(availableWidth.coerceAtMost(maxWidth), ViewGroup.LayoutParams.WRAP_CONTENT)
+    }
+
+    private fun dpToPx(value: Int): Int {
+        return TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            value.toFloat(),
+            resources.displayMetrics
+        ).toInt()
     }
 
     private companion object {

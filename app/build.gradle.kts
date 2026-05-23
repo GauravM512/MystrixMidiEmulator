@@ -4,7 +4,7 @@ plugins {
 
 val versionMajor = 1
 val versionMinor = 0
-val versionPatch = 6
+val versionPatch = 7
 val versionBuild = 1 // Internal build number
 
 android {
@@ -14,7 +14,7 @@ android {
     defaultConfig {
         applicationId = "com.matrix.midiemulator"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 37
         versionCode = versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
         versionName = "$versionMajor.$versionMinor.$versionPatch"
     }

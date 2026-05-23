@@ -37,6 +37,13 @@
     <string name="setting_palette_import_success">Imported palette saved to Slot %1$d</string>
     <string name="setting_palette_source_success">Palette source set to %1$s</string>
     <string name="setting_palette_empty">The palette is empty</string>
+    <string name="setting_palette_rename_hint">Long press an imported slot to rename it.</string>
+    <string name="setting_palette_rename_title">Rename Palette Slot %1$d</string>
+    <string name="setting_palette_rename_save">Rename</string>
+    <string name="setting_palette_rename_select_slot">Select an imported slot to rename</string>
+    <string name="setting_palette_rename_success">Palette renamed to %1$s</string>
+    <string name="setting_palette_rename_empty">Name was empty, restored default slot name</string>
+    <string name="setting_palette_rename_failed">Could not rename palette</string>
     <string name="setting_palette_import_failed">Could not import palette file</string>
     <string name="setting_palette_import_cancelled">Palette import cancelled</string>
     <string name="setting_palette_import_hint">Select a text file that matches the Mystrix palette format.</string>

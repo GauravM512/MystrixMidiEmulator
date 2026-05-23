@@ -75,15 +75,49 @@ object PaletteStore {
         return file
     }
 
+    fun saveSlotPreservingName(context: Context, slot: PaletteSlot): File {
+        val slotLabel = "Slot ${slot.slotId + 1}"
+        val existingName = loadSlot(context, slot.slotId)?.name?.trim().orEmpty()
+        val name = if (existingName.isNotEmpty() && existingName != slotLabel) existingName else slot.name
+        return saveSlot(context, slot.copy(name = name))
+    }
+
     fun loadSlot(context: Context, slotId: Int): PaletteSlot? {
         val file = slotFile(context, slotId)
         if (!file.exists()) return null
         return parsePaletteText(file.readText(), slotId, "Slot ${slotId + 1}")
     }
 
+    fun getSlotDisplayName(context: Context, slotId: Int): String {
+        val slotLabel = "Slot ${slotId + 1}"
+        val name = loadSlot(context, slotId)?.name?.trim().orEmpty()
+        if (name.isEmpty() || name == slotLabel) return slotLabel
+        if (name.endsWith(" - $slotLabel")) return name
+        return "$name - $slotLabel"
+    }
+
     fun isSlotEmpty(context: Context, slotId: Int): Boolean {
         val slot = loadSlot(context, slotId) ?: return true
         return slot.colors.all { it == LedPalette.OFF_COLOR }
+    }
+
+    fun renameSlot(context: Context, slotId: Int, name: String): PaletteSlot? {
+        val slot = loadSlot(context, slotId) ?: return null
+        val slotLabel = "Slot ${slotId + 1}"
+        val trimmedName = name.trim()
+            .removeSuffix(" - $slotLabel")
+            .trim()
+        val renamedSlot = slot.copy(
+            name = if (trimmedName.isEmpty()) slotLabel else "$trimmedName - $slotLabel"
+        )
+        saveSlot(context, renamedSlot)
+        return renamedSlot
+    }
+
+    fun baseRenameName(displayName: String, slotId: Int): String {
+        return displayName
+            .removeSuffix(" - Slot ${slotId + 1}")
+            .trim()
     }
 
     fun applySelectedPalette(context: Context) {
@@ -99,7 +133,7 @@ object PaletteStore {
     }
 
     fun saveAndApply(context: Context, slot: PaletteSlot) {
-        saveSlot(context, slot)
+        saveSlotPreservingName(context, slot)
         if (AppPreferences.getActivePaletteSlot(context) == slot.slotId + 2) {
             PaletteRuntime.setActiveColors(slot.colors, isCustom = true)
         }
