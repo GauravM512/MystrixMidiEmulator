@@ -162,6 +162,15 @@ class SettingsActivity : AppCompatActivity() {
             override fun onItemSelected(parent: android.widget.AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
                 if (suppressSourceChange) return
                 if (AppPreferences.getActivePaletteSlot(this@SettingsActivity) == position) return
+                if (position in 2..5 && PaletteStore.isSlotEmpty(this@SettingsActivity, position - 2)) {
+                    AppPreferences.setActivePaletteSlot(this@SettingsActivity, 0)
+                    PaletteStore.applySelectedPalette(this@SettingsActivity)
+                    suppressSourceChange = true
+                    paletteSourceSpinner.setSelection(0)
+                    suppressSourceChange = false
+                    Toast.makeText(this@SettingsActivity, getString(R.string.setting_palette_empty), Toast.LENGTH_SHORT).show()
+                    return
+                }
                 AppPreferences.setActivePaletteSlot(this@SettingsActivity, position)
                 PaletteStore.applySelectedPalette(this@SettingsActivity)
                 Toast.makeText(this@SettingsActivity, getString(R.string.setting_palette_source_success, paletteSources[position]), Toast.LENGTH_SHORT).show()

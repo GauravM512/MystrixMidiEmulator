@@ -36,6 +36,7 @@
     <string name="setting_palette_source_slot">Slot %1$d</string>
     <string name="setting_palette_import_success">Imported palette saved to Slot %1$d</string>
     <string name="setting_palette_source_success">Palette source set to %1$s</string>
+    <string name="setting_palette_empty">The palette is empty</string>
     <string name="setting_palette_import_failed">Could not import palette file</string>
     <string name="setting_palette_import_cancelled">Palette import cancelled</string>
     <string name="setting_palette_import_hint">Select a text file that matches the Mystrix palette format.</string>

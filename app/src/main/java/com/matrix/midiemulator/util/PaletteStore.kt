@@ -81,6 +81,11 @@ object PaletteStore {
         return parsePaletteText(file.readText(), slotId, "Slot ${slotId + 1}")
     }
 
+    fun isSlotEmpty(context: Context, slotId: Int): Boolean {
+        val slot = loadSlot(context, slotId) ?: return true
+        return slot.colors.all { it == LedPalette.OFF_COLOR }
+    }
+
     fun applySelectedPalette(context: Context) {
         val selectedSlot = AppPreferences.getActivePaletteSlot(context)
         val colors = when (selectedSlot) {
