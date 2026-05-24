@@ -7,6 +7,7 @@ object AppPreferences {
     const val LAYOUT_MODE_MYSTRIX = 0
     const val LAYOUT_MODE_LAUNCHPAD_PRO_MK2 = 1
     const val LAYOUT_MODE_LAUNCHPAD_X = 2
+    const val LAYOUT_MODE_LAUNCHPAD_PRO_MK3 = 3
 
     private const val PREFS_NAME = "matrix_midi_emulator_prefs"
     private const val KEY_SHOW_CONNECTION_STATUS = "show_connection_status"
@@ -33,14 +34,14 @@ object AppPreferences {
     fun getLayoutMode(context: Context): Int {
         return prefs(context)
             .getInt(KEY_LAYOUT_MODE, LAYOUT_MODE_MYSTRIX)
-            .coerceIn(LAYOUT_MODE_MYSTRIX, LAYOUT_MODE_LAUNCHPAD_X)
+            .coerceIn(LAYOUT_MODE_MYSTRIX, LAYOUT_MODE_LAUNCHPAD_PRO_MK3)
     }
 
     fun setLayoutMode(context: Context, mode: Int) {
         prefs(context).edit {
             putInt(
                 KEY_LAYOUT_MODE,
-                mode.coerceIn(LAYOUT_MODE_MYSTRIX, LAYOUT_MODE_LAUNCHPAD_X)
+                mode.coerceIn(LAYOUT_MODE_MYSTRIX, LAYOUT_MODE_LAUNCHPAD_PRO_MK3)
             )
         }
     }
