@@ -6,6 +6,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.matrix.midiemulator.ui.layout.LaunchpadPro
+import com.matrix.midiemulator.ui.layout.LaunchpadProMk3
 import com.matrix.midiemulator.ui.layout.LaunchpadX
 import com.matrix.midiemulator.ui.layout.MystrixLayout
 import com.matrix.midiemulator.ui.layout.PadLayout
@@ -28,7 +29,8 @@ class PadGridView @JvmOverloads constructor(
     private enum class GridLayoutMode {
         MYSTRIX,
         LAUNCHPAD_PRO,
-        LAUNCHPAD_X
+        LAUNCHPAD_X,
+        LAUNCHPAD_PRO_MK3
     }
 
     private companion object {
@@ -58,6 +60,7 @@ class PadGridView @JvmOverloads constructor(
     private val mystrixLayout = MystrixLayout(density, gap)
     private val launchpadProLayout = LaunchpadPro(density, gap)
     private val launchpadXLayout = LaunchpadX(density, gap)
+    private val launchpadProMk3Layout = LaunchpadProMk3(density, gap)
 
     private var layoutMode = GridLayoutMode.MYSTRIX
     private var activeLayout: PadLayout = mystrixLayout
@@ -191,6 +194,7 @@ class PadGridView @JvmOverloads constructor(
         layoutMode = when (mode) {
             AppPreferences.LAYOUT_MODE_LAUNCHPAD_PRO_MK2 -> GridLayoutMode.LAUNCHPAD_PRO
             AppPreferences.LAYOUT_MODE_LAUNCHPAD_X -> GridLayoutMode.LAUNCHPAD_X
+            AppPreferences.LAYOUT_MODE_LAUNCHPAD_PRO_MK3 -> GridLayoutMode.LAUNCHPAD_PRO_MK3
             else -> GridLayoutMode.MYSTRIX
         }
         mystrixLayout.showEdgeLights = layoutMode == GridLayoutMode.MYSTRIX
@@ -226,6 +230,7 @@ class PadGridView @JvmOverloads constructor(
             GridLayoutMode.MYSTRIX -> mystrixLayout
             GridLayoutMode.LAUNCHPAD_PRO -> launchpadProLayout
             GridLayoutMode.LAUNCHPAD_X -> launchpadXLayout
+            GridLayoutMode.LAUNCHPAD_PRO_MK3 -> launchpadProMk3Layout
         }
         activeLayout.recomputeMetrics(width, height)
         requestLayout()

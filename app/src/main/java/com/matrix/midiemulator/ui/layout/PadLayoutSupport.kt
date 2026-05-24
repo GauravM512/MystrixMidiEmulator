@@ -155,10 +155,17 @@ internal abstract class BasePadLayout(
         drawPadShape(canvas, padRect, col, row, radius)
 
         if (state.padPressed[note]) {
-            paint.color = 0x80FFFFFF.toInt()
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = PRESSED_PAD_STROKE_DP * density
-            drawPadShape(canvas, padRect, col, row, radius)
+            scratchRect.set(padRect)
+            scratchRect.inset(PRESSED_PAD_INSET_DP * density, PRESSED_PAD_INSET_DP * density)
+            paint.color = 0x44FFFFFF
+            paint.style = Paint.Style.FILL
+            drawPadShape(
+                canvas,
+                scratchRect,
+                col,
+                row,
+                (radius - PRESSED_PAD_INSET_DP * density).coerceAtLeast(0f)
+            )
             paint.style = Paint.Style.FILL
         }
     }
@@ -302,6 +309,6 @@ internal abstract class BasePadLayout(
     }
 
     private companion object {
-        private const val PRESSED_PAD_STROKE_DP = 3f
+        private const val PRESSED_PAD_INSET_DP = 3f
     }
 }

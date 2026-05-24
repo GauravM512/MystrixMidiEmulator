@@ -73,7 +73,8 @@ class SettingsActivity : AppCompatActivity() {
         val layoutModes = listOf(
             getString(R.string.setting_layout_mystrix),
             getString(R.string.setting_layout_launchpad_pro_mk2),
-            getString(R.string.setting_layout_launchpad_x)
+            getString(R.string.setting_layout_launchpad_x),
+            getString(R.string.setting_layout_launchpad_pro_mk3)
         )
         layoutModeSpinner.adapter = ArrayAdapter(this, R.layout.spinner_item_light, layoutModes).apply {
             setDropDownViewResource(R.layout.spinner_item_dropdown_light)

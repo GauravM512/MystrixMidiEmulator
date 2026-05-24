@@ -186,17 +186,16 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         SystemUiMode.applyImmersiveMode(this, AppPreferences.isImmersiveModeEnabled(this))
 
         val layoutMode = AppPreferences.getLayoutMode(this)
-        val isLaunchpadLayout = layoutMode == AppPreferences.LAYOUT_MODE_LAUNCHPAD_PRO_MK2
-        val isLaunchpadXLayout = layoutMode == AppPreferences.LAYOUT_MODE_LAUNCHPAD_X
+        val hasTouchbar = layoutMode == AppPreferences.LAYOUT_MODE_MYSTRIX
 
         padGrid.setLayoutMode(layoutMode)
         bridgeParser?.flickerReduction?.enabled = AppPreferences.isFlickerReductionEnabled(this)
 
-        touchbarContainer.visibility = if (isLaunchpadLayout || isLaunchpadXLayout) View.GONE else View.VISIBLE
+        touchbarContainer.visibility = if (hasTouchbar) View.VISIBLE else View.GONE
 
         padGrid.setEffectBrightnessPercent(AppPreferences.getLedBrightnessPercent(this))
         applyLandscapePadsPreference()
-        if (!isLaunchpadLayout && !isLaunchpadXLayout && ::touchbar.isInitialized) {
+        if (hasTouchbar && ::touchbar.isInitialized) {
             touchbar.setSelectedPage(AppPreferences.getSelectedPage(this))
         }
         val showStatus = AppPreferences.isConnectionStatusVisible(this)
