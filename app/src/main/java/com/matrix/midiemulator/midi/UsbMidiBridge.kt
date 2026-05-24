@@ -1,6 +1,9 @@
 package com.matrix.midiemulator.midi
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.media.midi.MidiDevice
 import android.media.midi.MidiDeviceInfo
 import android.media.midi.MidiInputPort
@@ -9,6 +12,7 @@ import android.media.midi.MidiOutputPort
 import android.media.midi.MidiReceiver as AndroidMidiReceiver
 import android.os.Build
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -17,6 +21,9 @@ class UsbMidiBridge(context: Context) {
     companion object {
         private const val TAG_OUT = "MIDI_OUT"
         private const val TAG_IN = "MIDI_IN"
+        private const val ACTION_USB_STATE = "android.hardware.usb.action.USB_STATE"
+        private const val EXTRA_USB_CONNECTED = "connected"
+        private const val EXTRA_USB_MIDI = "midi"
     }
 
     private val appContext: Context = context.applicationContext
@@ -36,10 +43,38 @@ class UsbMidiBridge(context: Context) {
     private var packetListener: ((ByteArray, Long) -> Unit)? = null
 
     @Volatile
+    private var usbStateListener: ((Boolean) -> Unit)? = null
+
+    @Volatile
+    private var hasUsbState = false
+
+    @Volatile
+    private var usbCableConnected = false
+
+    @Volatile
+    private var usbMidiConnected = false
+
+    private var usbStateReceiverRegistered = false
+
+    @Volatile
     private var txCount = 0L
 
     @Volatile
     private var rxCount = 0L
+
+    private val usbStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != ACTION_USB_STATE) return
+
+            val connected = intent.getBooleanExtra(EXTRA_USB_CONNECTED, false)
+            val midi = intent.getBooleanExtra(EXTRA_USB_MIDI, false)
+            handleUsbState(connected = connected, midi = midi, showNotification = true)
+        }
+    }
+
+    init {
+        registerUsbStateReceiver()
+    }
 
     fun isSupported(): Boolean = midiManager != null
 
@@ -48,27 +83,14 @@ class UsbMidiBridge(context: Context) {
         packetListener = listener
     }
 
-    fun getOutputDisplayNames(): Array<String> {
-        if (!isSupported()) return emptyArray()
-        val targets = listDeviceTargets()
-        return targets.map { target ->
-            var product = target.info.properties.getString(MidiDeviceInfo.PROPERTY_PRODUCT)
-            if (product.isNullOrEmpty()) {
-                product = target.info.properties.getString(MidiDeviceInfo.PROPERTY_NAME)
-            }
-            if (product.isNullOrEmpty()) {
-                product = "USB MIDI Device"
-            }
-            val suffix = buildString {
-                if (target.inputPortNumber >= 0) append("Tx")
-                if (target.outputPortNumber >= 0) {
-                    if (isNotEmpty()) append("/")
-                    append("Rx")
-                }
-            }
-            if (suffix.isEmpty()) product else "$product ($suffix)"
-        }.toTypedArray()
+    @Synchronized
+    fun setUsbStateListener(listener: ((Boolean) -> Unit)?) {
+        usbStateListener = listener
     }
+
+    fun hasUsbConnectionState(): Boolean = hasUsbState
+
+    fun isUsbMidiConnected(): Boolean = hasUsbState && usbCableConnected && usbMidiConnected
 
     fun openOutputByIndex(index: Int): Boolean {
         if (!isSupported()) return false
@@ -83,8 +105,6 @@ class UsbMidiBridge(context: Context) {
         return opened
     }
 
-    fun openFirstOutput(): Boolean = openOutputByIndex(0)
-
     fun getRecommendedTargetIndex(): Int {
         val targets = listDeviceTargets()
         for (i in targets.indices) {
@@ -95,42 +115,6 @@ class UsbMidiBridge(context: Context) {
             if (targets[i].inputPortNumber >= 0) return i
         }
         return if (targets.isEmpty()) -1 else 0
-    }
-
-    fun reopenBestTxTarget(preferredIndex: Int): Boolean {
-        val targets = listDeviceTargets()
-        if (targets.isEmpty()) return false
-
-        var pick = -1
-        if (preferredIndex in targets.indices && targets[preferredIndex].inputPortNumber >= 0) {
-            pick = preferredIndex
-        }
-        if (pick < 0) {
-            for (i in targets.indices) {
-                val t = targets[i]
-                if (t.inputPortNumber >= 0 && t.outputPortNumber >= 0) {
-                    pick = i
-                    break
-                }
-            }
-        }
-        if (pick < 0) {
-            for (i in targets.indices) {
-                if (targets[i].inputPortNumber >= 0) {
-                    pick = i
-                    break
-                }
-            }
-        }
-        if (pick < 0) {
-            Log.w(TAG_OUT, "reopenBestTxTarget found no TX-capable endpoints")
-            return false
-        }
-
-        val selected = targets[pick]
-        val opened = openTarget(targets, selected)
-        Log.i(TAG_OUT, "reopenBestTxTarget index=$pick opened=$opened target=${describeDevice(selected.info)}")
-        return opened
     }
 
     @Synchronized
@@ -188,6 +172,12 @@ class UsbMidiBridge(context: Context) {
 
     @Synchronized
     fun close() {
+        unregisterUsbStateReceiver()
+        closeMidiPorts()
+    }
+
+    @Synchronized
+    private fun closeMidiPorts() {
         val txDevice = currentTxDevice
         val rxDevice = currentRxDevice
         val txPorts = extraInputPorts.toList()
@@ -254,13 +244,13 @@ class UsbMidiBridge(context: Context) {
     }
 
     fun statsSnapshot(): String {
-        return "B_TX=$txCount B_RX=$rxCount B_CAN_TX=${canSend()} B_CAN_RX=${canReceive()}"
+        return "B_TX=$txCount B_RX=$rxCount B_CAN_TX=${canSend()} B_CAN_RX=${canReceive()} USB_MIDI=$usbMidiConnected"
     }
 
     private fun openTarget(targets: List<DeviceTarget>, selectedTarget: DeviceTarget?): Boolean {
         if (targets.isEmpty() || selectedTarget == null) return false
 
-        close()
+        closeMidiPorts()
 
         val ordered = orderedTargets(targets, selectedTarget)
 
@@ -376,7 +366,7 @@ class UsbMidiBridge(context: Context) {
 
         try {
             latch.await(2500, TimeUnit.MILLISECONDS)
-        } catch (e: InterruptedException) {
+        } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
         }
         return opened[0]
@@ -456,6 +446,42 @@ class UsbMidiBridge(context: Context) {
                 }
             }
         })
+    }
+
+    private fun registerUsbStateReceiver() {
+        if (usbStateReceiverRegistered) return
+
+        val stickyIntent = ContextCompat.registerReceiver(
+            appContext,
+            usbStateReceiver,
+            IntentFilter(ACTION_USB_STATE),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        usbStateReceiverRegistered = true
+
+        if (stickyIntent != null) {
+            val connected = stickyIntent.getBooleanExtra(EXTRA_USB_CONNECTED, false)
+            val midi = stickyIntent.getBooleanExtra(EXTRA_USB_MIDI, false)
+            handleUsbState(connected = connected, midi = midi, showNotification = false)
+        }
+    }
+
+    private fun unregisterUsbStateReceiver() {
+        if (!usbStateReceiverRegistered) return
+
+        appContext.unregisterReceiver(usbStateReceiver)
+        usbStateReceiverRegistered = false
+    }
+
+    private fun handleUsbState(connected: Boolean, midi: Boolean, showNotification: Boolean) {
+        val wasMidiConnected = usbMidiConnected
+
+        hasUsbState = true
+        usbCableConnected = connected
+        usbMidiConnected = connected && midi
+
+        val showMidiConnectedNotification = showNotification && !wasMidiConnected && usbMidiConnected
+        usbStateListener?.invoke(showMidiConnectedNotification)
     }
 
     private fun listDeviceTargets(): List<DeviceTarget> {

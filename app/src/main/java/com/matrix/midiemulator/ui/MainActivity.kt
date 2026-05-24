@@ -23,6 +23,7 @@ import com.matrix.midiemulator.util.NoteMap
 import com.matrix.midiemulator.util.PaletteSlot
 import com.matrix.midiemulator.util.PaletteStore
 import com.matrix.midiemulator.util.SystemUiMode
+import com.google.android.material.snackbar.Snackbar
 
 /**
  * Main activity that displays the pad grid and manages the MIDI connection.
@@ -84,6 +85,18 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         startService(Intent(this, MatrixMidiDeviceService::class.java))
         usbBridge = UsbMidiBridge(this)
         bridgeParser = MidiReceiver(this)
+        usbBridge?.setUsbStateListener { showMidiConnectedNotification ->
+            mainHandler.post {
+                checkMidiConnection()
+                if (showMidiConnectedNotification) {
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "Connected as MIDI device",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
         usbBridge?.setPacketListener { data, timestamp ->
             bridgeParser?.onSend(data, 0, data.size, timestamp)
         }
@@ -257,10 +270,14 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
     }
 
     private fun checkMidiConnection() {
-        // The UI's connection status will now primarily reflect the UsbMidiBridge's connection
-        // to an external MIDI device.
-        val bridgeConnected = usbBridge?.canSend() == true || usbBridge?.canReceive() == true
-        if (bridgeConnected) {
+        val bridge = usbBridge
+        val bridgeConnected = bridge?.canSend() == true || bridge?.canReceive() == true
+        val connected = if (bridge?.hasUsbConnectionState() == true) {
+            bridge.isUsbMidiConnected()
+        } else {
+            bridgeConnected
+        }
+        if (connected) {
             onConnected()
         } else {
             onDisconnected()
