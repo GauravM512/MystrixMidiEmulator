@@ -1,5 +1,6 @@
 package com.matrix.midiemulator.ui
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
@@ -105,6 +106,7 @@ class PadGridView @JvmOverloads constructor(
         activeLayout.draw(canvas, renderStateSnapshot())
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
@@ -178,16 +180,6 @@ class PadGridView @JvmOverloads constructor(
 
     fun setEffectBrightnessPercent(percent: Int) {
         setLedBrightnessPercent(percent)
-    }
-
-    fun setCircularPadMode(enabled: Boolean) {
-        layoutMode = if (enabled) GridLayoutMode.LAUNCHPAD_PRO else GridLayoutMode.MYSTRIX
-        applyActiveLayout()
-    }
-
-    fun setShowEdgeLights(enabled: Boolean) {
-        mystrixLayout.showEdgeLights = enabled
-        scheduleRedraw()
     }
 
     fun setLayoutMode(mode: Int) {

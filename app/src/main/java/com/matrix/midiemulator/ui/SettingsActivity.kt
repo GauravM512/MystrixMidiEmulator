@@ -1,5 +1,6 @@
 package com.matrix.midiemulator.ui
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -245,7 +246,7 @@ class SettingsActivity : AppCompatActivity() {
                     refreshPaletteSources()
                     Toast.makeText(this, getString(R.string.setting_palette_import_success, slotId), Toast.LENGTH_SHORT).show()
                 } ?: throw IllegalStateException("Could not open file")
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(this, getString(R.string.setting_palette_import_failed), Toast.LENGTH_SHORT).show()
             }
         }
@@ -322,6 +323,7 @@ class SettingsActivity : AppCompatActivity() {
         return packageInfo.versionName ?: ""
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupBrightnessPreview(previewGrid: PadGridView) {
         previewGrid.setOnTouchListener { _, _ -> true }
         previewGrid.clearAll()
