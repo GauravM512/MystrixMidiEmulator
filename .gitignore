@@ -187,7 +187,6 @@ fabric.properties
 
 ### AndroidStudio Patch ###
 
-gradle/wrapper/gradle-wrapper.jar
 
 gradle.properties
 .codex
