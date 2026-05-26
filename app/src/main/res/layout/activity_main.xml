@@ -23,13 +23,14 @@
 
         <ImageButton
             android:id="@+id/settingsButton"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@drawable/cog"
             android:scaleType="centerInside"
-            android:background="@drawable/circle_white"
+            android:background="@drawable/settings_icon_button_background"
             android:contentDescription="@string/settings"
-            android:padding="4dp" />
+            android:padding="12dp"
+            app:tint="#A0A0B0" />
 
         <View
             android:id="@+id/statusIndicator"
