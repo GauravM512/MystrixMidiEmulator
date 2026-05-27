@@ -444,7 +444,6 @@ class MidiReceiver(
     }
 
     private val paletteUploads = mutableMapOf<Int, IntArray>()
-    private var uploadSessionSlot: Int? = null
 
     private fun processMatrixSysEx(data: ByteArray) {
         if (data.size < 8) return
@@ -471,25 +470,6 @@ class MidiReceiver(
         when (data[7]) {
             0x7B.toByte() -> {
                 paletteUploads.clear()
-                uploadSessionSlot = null
-                // Expected format for 0x7B (Uploading Start):
-                // 1. F0 00 02 03 4D 58 41 7B [slot_id] F7 (total size 10, explicit slot ID)
-                // 2. F0 00 02 03 4D 58 41 7B F7 (total size 9, implies default slot 0)
-                if (data.size == 10 && data[9] == SYSEX_END) {
-                    val slotId = data[8].toInt() and 0xFF
-                    if (slotId in 0..3) {
-                        uploadSessionSlot = slotId
-                    }
-                } else if (data.size == 9 && data[8] == SYSEX_END) {
-                    // If the 0x7B message does not contain an explicit slot ID,
-                    // it implies the upload is for the default/current slot, which is typically 0.
-                    // This allows subsequent 0x3D messages in "Format C" to target slot 0
-                    // if they are structured without explicit PaletteIDs.
-                    val slotId = 0 // Assume default slot 0
-                    if (slotId in 0..3) {
-                        uploadSessionSlot = slotId
-                    }
-                }
             }
             0x3D.toByte() -> {
                 val payloadStart = 8
@@ -500,8 +480,6 @@ class MidiReceiver(
                 if (payloadLength >= 1 && (payloadLength - 1) % 4 == 0) {
                     val slotId = data[payloadStart].toInt() and 0xFF // This is the single PaletteID for the batch
                     if (slotId in 0..3) {
-                        // No need to set uploadSessionSlot here, as this message explicitly contains the slotId.
-                        // uploadSessionSlot is for Format C, where the slotId is implicit.
                         var i = payloadStart + 1 // Start parsing colors from the next byte
                         while (i + 3 < payloadEnd) {
                             val index = data[i].toInt() and 0xFF
@@ -525,7 +503,6 @@ class MidiReceiver(
                     listener.onPaletteUpdate(slotId, "Slot ${slotId + 1}", colors.copyOf())
                 }
                 paletteUploads.clear()
-                uploadSessionSlot = null
             }
         }
     }

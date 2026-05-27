@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
 import android.media.midi.MidiDevice
 import android.media.midi.MidiDeviceInfo
 import android.media.midi.MidiInputPort
@@ -28,6 +29,8 @@ class UsbMidiBridge(context: Context) {
 
     private val appContext: Context = context.applicationContext
     private val midiManager: MidiManager? = appContext.getSystemService(Context.MIDI_SERVICE) as? MidiManager
+    private val logMidiBytesEnabled =
+        (appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
 
     private var currentTxDevice: MidiDevice? = null
     private var currentRxDevice: MidiDevice? = null
@@ -139,13 +142,13 @@ class UsbMidiBridge(context: Context) {
             currentInputPort?.send(data, 0, data.size)
             currentInputPort?.let {
                 txCount++
-                Log.d(TAG_OUT, "bridge tx bytes=${bytesToHex(data)}")
+                logMidiBytes(TAG_OUT, "bridge tx bytes=", data)
             }
             for (p in extraInputPorts) {
                 try {
                     p.send(data, 0, data.size)
                     txCount++
-                    Log.d(TAG_OUT, "bridge tx extra bytes=${bytesToHex(data)}")
+                    logMidiBytes(TAG_OUT, "bridge tx extra bytes=", data)
                 } catch (_: Exception) {
                 }
             }
@@ -157,13 +160,13 @@ class UsbMidiBridge(context: Context) {
             currentInputPort?.send(data, 0, data.size)
             currentInputPort?.let {
                 txCount++
-                Log.d(TAG_OUT, "bridge tx retry bytes=${bytesToHex(data)}")
+                logMidiBytes(TAG_OUT, "bridge tx retry bytes=", data)
             }
             for (p in extraInputPorts) {
                 try {
                     p.send(data, 0, data.size)
                     txCount++
-                    Log.d(TAG_OUT, "bridge tx retry extra bytes=${bytesToHex(data)}")
+                    logMidiBytes(TAG_OUT, "bridge tx retry extra bytes=", data)
                 } catch (_: Exception) {
                 }
             }
@@ -439,7 +442,7 @@ class UsbMidiBridge(context: Context) {
                 if (listener != null && count > 0 && offset >= 0 && offset + count <= msg.size) {
                     val copy = msg.copyOfRange(offset, offset + count)
                     rxCount++
-                    Log.d(TAG_IN, "bridge rx bytes=${bytesToHex(copy)}")
+                    logMidiBytes(TAG_IN, "bridge rx bytes=", copy)
                     listener.invoke(copy, timestamp)
                 } else if (count > 0) {
                     Log.w(TAG_IN, "bridge rx dropped due to invalid bounds or missing listener")
@@ -671,6 +674,12 @@ class UsbMidiBridge(context: Context) {
             sb.append(String.format("%02X", b.toInt() and 0xFF))
         }
         return sb.toString()
+    }
+
+    private fun logMidiBytes(tag: String, prefix: String, data: ByteArray) {
+        if (logMidiBytesEnabled || Log.isLoggable(tag, Log.VERBOSE)) {
+            Log.d(tag, prefix + bytesToHex(data))
+        }
     }
 
     private data class DeviceTarget(

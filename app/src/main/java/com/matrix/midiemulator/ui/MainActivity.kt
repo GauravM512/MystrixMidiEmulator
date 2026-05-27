@@ -110,8 +110,6 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         setupSettingsButton()
         applyUserPreferences()
         checkMidiConnection()
-        mainHandler.post(statusTicker)
-        mainHandler.post(flickerTicker)
     }
 
     override fun onResume() {
