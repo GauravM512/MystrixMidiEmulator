@@ -186,7 +186,7 @@ crashlytics-build.properties
 fabric.properties
 
 ### AndroidStudio Patch ###
-
+.agents
 
 gradle.properties
 .codex

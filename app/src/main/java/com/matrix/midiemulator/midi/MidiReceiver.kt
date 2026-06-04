@@ -268,10 +268,9 @@ class MidiReceiver(
             return
         }
 
-        // CFW (Launchpad Pro Custom Firmware) clear command from Novation
-        if (isNovationClear(data)) {
-            flickerReduction.clearAll()
-            listener.onClearAll()
+        // Handle CFW (Launchpad Pro Custom Firmware) SysEx
+        if (isNovationSysEx(data)) {
+            processNovationSysEx(data)
             return
         }
 
@@ -537,15 +536,37 @@ class MidiReceiver(
      * Format: F0 00 20 29 02 10 0E 00 F7
      * Sent by Apollo Studio to CFW devices for clearing all LEDs.
      */
-    private fun isNovationClear(data: ByteArray): Boolean {
-        return data.size == 9 &&
+    private fun isNovationSysEx(data: ByteArray): Boolean {
+        return data.size >= 4 &&
             data[1] == 0x00.toByte() &&
             data[2] == 0x20.toByte() &&
-            data[3] == 0x29.toByte() &&
-            data[4] == 0x02.toByte() &&
-            data[5] == 0x10.toByte() &&
-            data[6] == 0x0E.toByte() &&
-            data[7] == 0x00.toByte() &&
-            data[8] == SYSEX_END
+            data[3] == 0x29.toByte()
+    }
+
+    /**
+     * Process Novation specific SysEx commands.
+     * Supported:
+     * - 0x0E: LED Clear (F0 00 20 29 02 10 0E 00 F7)
+     * - 0x0B: RGB Direct Fill (F0 00 20 29 02 10 0B <index><R><G><B>... F7)
+     */
+    private fun processNovationSysEx(data: ByteArray) {
+        if (data.size < 7) return
+
+        // Launchpad Pro specific header: F0 00 20 29 02 10
+        if (data[4] == 0x02.toByte() && data[5] == 0x10.toByte()) {
+            val command = data[6].toInt() and 0xFF
+            when (command) {
+                0x0E -> { // Clear: F0 00 20 29 02 10 0E 00 F7
+                    if (data.size >= 9 && data[7] == 0x00.toByte() && data[8] == SYSEX_END) {
+                        flickerReduction.clearAll()
+                        listener.onClearAll()
+                    }
+                }
+                0x0B -> { // RGB LED update: F0 00 20 29 02 10 0B <payload> F7
+                    // Novation 0B command uses XY indices (same as Apollo/CFW)
+                    processDirectFill(data, payloadStart = 7, usesGridIndexes = true)
+                }
+            }
+        }
     }
 }
