@@ -186,7 +186,7 @@ internal class LaunchpadPro(
     private fun rightEdgeX(): Float = gridInnerRight() + edgeButtonRadius + gap * 0.8f
 
     private companion object {
-        private const val PAD_CORNER_RADIUS_DP = 8f
+        private const val PAD_CORNER_RADIUS_DP = 6f
 
         private val EDGE_HIT_NOTES = intArrayOf(
             28, 29, 30, 31, 32, 33, 34, 35,

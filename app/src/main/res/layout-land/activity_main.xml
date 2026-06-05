@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D0D0D"
+    tools:context=".ui.MainActivity">
+
+    <!-- Vertical Side Bar (Left) -->
+    <LinearLayout
+        android:id="@+id/statusBar"
+        android:layout_width="@dimen/sidebar_width"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"
+        android:background="#111122"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/cog"
+            android:scaleType="centerInside"
+            android:background="@drawable/settings_icon_button_background"
+            android:contentDescription="@string/settings"
+            android:padding="12dp"
+            app:tint="#A0A0B0" />
+
+        <View
+            android:id="@+id/statusIndicator"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/circle_red"/>
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="16dp"
+            android:text="@string/status_disconnected"
+            android:textColor="#888888"
+            android:textSize="10sp"
+            android:gravity="center"
+            android:rotation="90"
+            tools:ignore="SmallSp" />
+
+    </LinearLayout>
+
+    <!-- 8x8 Pad Grid (Center) -->
+    <com.matrix.midiemulator.ui.PadGridView
+        android:id="@+id/padGrid"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/statusBar"
+        app:layout_constraintEnd_toStartOf="@id/touchbarContainer"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintHeight_percent="0.96"
+        app:layout_constraintWidth_max="@dimen/pad_grid_max_size"
+        app:layout_constraintHeight_max="@dimen/pad_grid_max_size"
+        android:layout_margin="8dp"/>
+
+    <!-- Vertical Touchbar Container (Right) -->
+    <LinearLayout
+        android:id="@+id/touchbarContainer"
+        android:layout_width="@dimen/touchbar_sidebar_width"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

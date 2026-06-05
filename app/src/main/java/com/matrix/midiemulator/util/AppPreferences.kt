@@ -17,7 +17,6 @@ object AppPreferences {
     private const val KEY_PALETTE_IMPORT_SLOT = "palette_import_slot"
     private const val KEY_LED_BRIGHTNESS_PERCENT = "led_brightness_percent"
     private const val KEY_FLICKER_REDUCTION_ENABLED = "flicker_reduction_enabled"
-    private const val KEY_LANDSCAPE_PADS = "landscape_pads"
     private const val KEY_IMMERSIVE_MODE = "immersive_mode"
     private const val KEY_LAUNCHPAD_CFW_IDENTITY = "launchpad_cfw_identity"
 
@@ -76,14 +75,6 @@ object AppPreferences {
 
     fun setFlickerReductionEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit { putBoolean(KEY_FLICKER_REDUCTION_ENABLED, enabled) }
-    }
-
-    fun isLandscapePadsEnabled(context: Context): Boolean {
-        return prefs(context).getBoolean(KEY_LANDSCAPE_PADS, false)
-    }
-
-    fun setLandscapePadsEnabled(context: Context, enabled: Boolean) {
-        prefs(context).edit { putBoolean(KEY_LANDSCAPE_PADS, enabled) }
     }
 
     fun isImmersiveModeEnabled(context: Context): Boolean {

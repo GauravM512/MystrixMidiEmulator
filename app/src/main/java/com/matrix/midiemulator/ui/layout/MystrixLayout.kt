@@ -123,6 +123,6 @@ internal class MystrixLayout(
     }
 
     private companion object {
-        private const val PAD_CORNER_RADIUS_DP = 8f
+        private const val PAD_CORNER_RADIUS_DP = 6f
     }
 }

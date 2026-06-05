@@ -43,7 +43,6 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = getString(R.string.settings_title)
 
-        val landscapePadsSwitch = findViewById<SwitchMaterial>(R.id.landscapePadsSwitch)
         val immersiveModeSwitch = findViewById<SwitchMaterial>(R.id.immersiveModeSwitch)
         val showConnectionStatusSwitch = findViewById<SwitchMaterial>(R.id.showConnectionStatusSwitch)
         val flickerReductionSwitch = findViewById<SwitchMaterial>(R.id.flickerReductionSwitch)
@@ -59,7 +58,6 @@ class SettingsActivity : AppCompatActivity() {
         val brightnessValueText = findViewById<TextView>(R.id.brightnessValueText)
         val brightnessPreviewGrid = findViewById<PadGridView>(R.id.brightnessPreviewGrid)
         appVersionText.text = getString(R.string.settings_version, getAppVersionName())
-        landscapePadsSwitch.isChecked = AppPreferences.isLandscapePadsEnabled(this)
         immersiveModeSwitch.isChecked = AppPreferences.isImmersiveModeEnabled(this)
         showConnectionStatusSwitch.isChecked = AppPreferences.isConnectionStatusVisible(this)
         flickerReductionSwitch.isChecked = AppPreferences.isFlickerReductionEnabled(this)
@@ -120,10 +118,6 @@ class SettingsActivity : AppCompatActivity() {
 
         githubButton.setOnClickListener {
             startActivity(Intent(Intent.ACTION_VIEW, GITHUB_URL.toUri()))
-        }
-
-        landscapePadsSwitch.setOnCheckedChangeListener { _, isChecked ->
-            AppPreferences.setLandscapePadsEnabled(this, isChecked)
         }
 
         immersiveModeSwitch.setOnCheckedChangeListener { _, isChecked ->

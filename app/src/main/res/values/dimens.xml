@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="pad_grid_max_size">640dp</dimen>
+    <dimen name="sidebar_width">0dp</dimen>
+    <dimen name="touchbar_sidebar_width">0dp</dimen>
+    <dimen name="pad_grid_landscape_height_percent">0.0</dimen>
 </resources>

@@ -146,13 +146,16 @@ internal abstract class BasePadLayout(
         val top = padTopForRow(row)
         padRect.set(left, top, left + cellWidth, top + cellHeight)
 
+        // Ensure radius doesn't turn the pad into a circle on small views
+        val safeRadius = radius.coerceAtMost(minOf(cellWidth, cellHeight) * 0.4f)
+
         val rawPadColor = state.padColors[note]
         val litPadColor = applyPadBrightness(rawPadColor, state.brightnessScale)
         drawPadBloom(canvas, rawPadColor, litPadColor, state.brightnessScale)
 
         paint.color = litPadColor
         paint.style = Paint.Style.FILL
-        drawPadShape(canvas, padRect, col, row, radius)
+        drawPadShape(canvas, padRect, col, row, safeRadius)
 
         if (state.padPressed[note]) {
             scratchRect.set(padRect)
@@ -164,7 +167,7 @@ internal abstract class BasePadLayout(
                 scratchRect,
                 col,
                 row,
-                (radius - PRESSED_PAD_INSET_DP * density).coerceAtLeast(0f)
+                (safeRadius - PRESSED_PAD_INSET_DP * density).coerceAtLeast(0f)
             )
             paint.style = Paint.Style.FILL
         }
@@ -178,7 +181,11 @@ internal abstract class BasePadLayout(
         val boost = if (brightnessScale > 1f) (brightnessScale - 1f).coerceIn(0f, 1f) else 0f
         val baseBloomAlpha = if (brightnessScale <= 1f) (12 * brightnessScale).toInt() else 34
         
-        val bloomRadius = (maxOf(cellWidth, cellHeight) * (0.62f + boost * 0.75f)).coerceAtLeast(1f)
+        // Scale down bloom radius on very small pads (like in settings preview) to keep shape definition
+        val cellSize = maxOf(cellWidth, cellHeight)
+        val bloomScale = if (cellSize < 24f * density) 0.52f else 0.62f
+
+        val bloomRadius = (cellSize * (bloomScale + boost * 0.75f)).coerceAtLeast(1f)
         val bloomAlpha = (baseBloomAlpha + boost * 104f).toInt().coerceIn(0, 255)
         paint.shader = RadialGradient(
             padRect.centerX(),

@@ -7,7 +7,6 @@
     <string name="settings_subtitle">Tune how Mystrix feels, looks, and lights up.</string>
     <string name="settings_version">Version %1$s</string>
     <string name="github_link">Open project on GitHub</string>
-    <string name="setting_landscape_pads">Landscape pads</string>
     <string name="setting_appearance">Appearance</string>
     <string name="setting_immersive_mode">Immersive mode</string>
     <string name="setting_show_connection_status">Show Connection Status</string>

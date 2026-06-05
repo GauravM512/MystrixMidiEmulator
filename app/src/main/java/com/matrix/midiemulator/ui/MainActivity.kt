@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.OrientationEventListener
 import android.view.View
 import android.view.WindowManager
 import android.widget.LinearLayout
@@ -44,8 +43,6 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
     private var isConnected = false
     private var usbBridge: UsbMidiBridge? = null
     private var bridgeParser: MidiReceiver? = null
-    private var padOrientationListener: OrientationEventListener? = null
-    private var padRotationDegrees = 0f
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val statusTicker = object : Runnable {
@@ -104,7 +101,6 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         PaletteStore.applySelectedPalette(this)
 
         initViews()
-        setupPadOrientationListener()
         setupPadGrid()
         setupTouchbar()
         setupSettingsButton()
@@ -129,7 +125,6 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         // Don't unregister — keep receiving LED data
         mainHandler.removeCallbacks(statusTicker)
         mainHandler.removeCallbacks(flickerTicker)
-        padOrientationListener?.disable()
     }
 
     override fun onDestroy() {
@@ -167,16 +162,15 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         }
     }
 
-    private fun setupPadOrientationListener() {
-        padOrientationListener = object : OrientationEventListener(this) {
-            override fun onOrientationChanged(orientation: Int) {
-                if (orientation == ORIENTATION_UNKNOWN) return
-
-                when (orientation) {
-                    in 45..134 -> applyPadRotation(-90f)
-                    in 225..314 -> applyPadRotation(90f)
-                }
-            }
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Re-apply preferences which might depend on orientation
+        applyUserPreferences()
+        
+        // Update touchbar orientation if it exists
+        if (::touchbar.isInitialized) {
+            val isLandscape = newConfig.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            touchbar.setOrientation(if (isLandscape) TouchbarView.Orientation.VERTICAL else TouchbarView.Orientation.HORIZONTAL)
         }
     }
 
@@ -192,32 +186,12 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         touchbarContainer.visibility = if (hasTouchbar) View.VISIBLE else View.GONE
 
         padGrid.setEffectBrightnessPercent(AppPreferences.getLedBrightnessPercent(this))
-        applyLandscapePadsPreference()
         if (hasTouchbar && ::touchbar.isInitialized) {
             touchbar.setSelectedPage(AppPreferences.getSelectedPage(this))
         }
         val showStatus = AppPreferences.isConnectionStatusVisible(this)
         statusText.visibility = if (showStatus) View.VISIBLE else View.GONE
         statusIndicator.visibility = if (showStatus) View.VISIBLE else View.GONE
-    }
-
-    private fun applyLandscapePadsPreference() {
-        if (AppPreferences.isLandscapePadsEnabled(this)) {
-            if (padRotationDegrees == 0f) applyPadRotation(90f)
-            padOrientationListener?.enable()
-        } else {
-            padOrientationListener?.disable()
-            applyPadRotation(0f)
-        }
-    }
-
-    private fun applyPadRotation(rotation: Float) {
-        if (padRotationDegrees == rotation) return
-        padRotationDegrees = rotation
-        padGrid.animate()
-            .rotation(rotation)
-            .setDuration(120L)
-            .start()
     }
 
     private fun setupPadGrid() {
@@ -237,12 +211,18 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
     }
 
     private fun setupTouchbar() {
+        // Determine orientation based on layout
+        val isLandscape = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        
         // Programmatically create and add the touchbar view
         touchbar = TouchbarView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
             )
+            if (isLandscape) {
+                setOrientation(TouchbarView.Orientation.VERTICAL)
+            }
         }
         touchbarContainer.addView(touchbar)
 

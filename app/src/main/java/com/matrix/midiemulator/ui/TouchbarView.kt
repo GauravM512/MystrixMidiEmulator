@@ -23,9 +23,16 @@ class TouchbarView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    enum class Orientation {
+        HORIZONTAL,
+        VERTICAL
+    }
+
     companion object {
         private const val VISIBLE_SEGMENTS = 8
     }
+
+    private var orientation = Orientation.HORIZONTAL
 
     private val segmentColors = IntArray(NoteMap.TOUCHBAR_COUNT) { LedPalette.OFF_COLOR }
     private val segmentPressed = BooleanArray(NoteMap.TOUCHBAR_COUNT) { false }
@@ -61,18 +68,35 @@ class TouchbarView @JvmOverloads constructor(
         fun onSegmentAftertouch(index: Int, pressure: Int)
     }
 
+    fun setOrientation(orientation: Orientation) {
+        if (this.orientation != orientation) {
+            this.orientation = orientation
+            invalidate()
+        }
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         canvas.drawColor(0xFF1A1A1A.toInt())
 
         val layout = computeLayoutMetrics()
-        barRect.set(
-            layout.startX - inset,
-            layout.topY - inset,
-            layout.startX + layout.totalWidth + inset,
-            layout.topY + layout.segmentSize + inset
-        )
+        if (orientation == Orientation.HORIZONTAL) {
+            barRect.set(
+                layout.startX - inset,
+                layout.topY - inset,
+                layout.startX + layout.totalWidth + inset,
+                layout.topY + layout.segmentSize + inset
+            )
+        } else {
+            barRect.set(
+                layout.startX - inset,
+                layout.topY - inset,
+                layout.startX + layout.segmentSize + inset,
+                layout.topY + layout.totalWidth + inset
+            )
+        }
+        
         paint.style = Paint.Style.FILL
         paint.color = 0xFF171717.toInt()
         canvas.drawRoundRect(barRect, outerRadius, outerRadius, paint)
@@ -84,13 +108,20 @@ class TouchbarView @JvmOverloads constructor(
 
         updateNavigationRects(layout)
 
-        drawNavButton(canvas, leftNavRect, '<', visibleStartIndex > 0)
-        drawNavButton(canvas, rightNavRect, '>', visibleStartIndex < NoteMap.TOUCHBAR_COUNT - VISIBLE_SEGMENTS)
+        drawNavButton(canvas, leftNavRect, if (orientation == Orientation.HORIZONTAL) '<' else '^', visibleStartIndex > 0)
+        drawNavButton(canvas, rightNavRect, if (orientation == Orientation.HORIZONTAL) '>' else 'v', visibleStartIndex < NoteMap.TOUCHBAR_COUNT - VISIBLE_SEGMENTS)
 
         for (slot in 0 until VISIBLE_SEGMENTS) {
             val segmentIndex = visibleStartIndex + slot
-            val left = layout.startX + slot * (layout.segmentSize + gap)
-            val top = layout.topY
+            val left: Float
+            val top: Float
+            if (orientation == Orientation.HORIZONTAL) {
+                left = layout.startX + slot * (layout.segmentSize + gap)
+                top = layout.topY
+            } else {
+                left = layout.startX
+                top = layout.topY + slot * (layout.segmentSize + gap)
+            }
             val right = left + layout.segmentSize
             val bottom = top + layout.segmentSize
 
@@ -168,7 +199,7 @@ class TouchbarView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN, MotionEvent.ACTION_POINTER_DOWN -> {
                 val idx = event.actionIndex
                 val pointerId = event.getPointerId(idx)
-                pointerLastY[pointerId] = event.getY(idx)
+                pointerLastY[pointerId] = if (orientation == Orientation.HORIZONTAL) event.getY(idx) else event.getX(idx)
                 handleTouchDown(
                     pointerId,
                     event.getX(idx),
@@ -180,21 +211,24 @@ class TouchbarView @JvmOverloads constructor(
             MotionEvent.ACTION_MOVE -> {
                 for (i in 0 until event.pointerCount) {
                     val pointerId = event.getPointerId(i)
-                    val y = event.getY(i)
-                    val lastY = pointerLastY[pointerId]
-                    if (lastY != null) {
-                        val dy = y - lastY
-                        if (kotlin.math.abs(dy) > touchSlop) {
-                            shiftVisibleWindow(if (dy > 0f) -1 else 1)
-                            pointerLastY[pointerId] = y
+                    val currentPos = if (orientation == Orientation.HORIZONTAL) event.getY(i) else event.getX(i)
+                    val lastPos = pointerLastY[pointerId]
+                    if (lastPos != null) {
+                        val delta = currentPos - lastPos
+                        if (kotlin.math.abs(delta) > touchSlop) {
+                            // In horizontal mode, Y drag shifts window. In vertical, X drag.
+                            // Actually, let's keep it simple: any swipe perpendicular to the bar? 
+                            // Or just use the logic we have.
+                            shiftVisibleWindow(if (delta > 0f) -1 else 1)
+                            pointerLastY[pointerId] = currentPos
                         }
                     } else {
-                        pointerLastY[pointerId] = y
+                        pointerLastY[pointerId] = currentPos
                     }
                     handleTouchMove(
                         pointerId,
                         event.getX(i),
-                        y,
+                        event.getY(i),
                         event.getPressure(i)
                     )
                 }
@@ -220,8 +254,15 @@ class TouchbarView @JvmOverloads constructor(
     private fun getSegmentForPosition(x: Float, y: Float): Int? {
         val layout = computeLayoutMetrics()
         for (slot in 0 until VISIBLE_SEGMENTS) {
-            val left = layout.startX + slot * (layout.segmentSize + gap)
-            val top = layout.topY
+            val left: Float
+            val top: Float
+            if (orientation == Orientation.HORIZONTAL) {
+                left = layout.startX + slot * (layout.segmentSize + gap)
+                top = layout.topY
+            } else {
+                left = layout.startX
+                top = layout.topY + slot * (layout.segmentSize + gap)
+            }
             val right = left + layout.segmentSize
             val bottom = top + layout.segmentSize
             if (x in left..right && y in top..bottom) return visibleStartIndex + slot
@@ -320,28 +361,56 @@ class TouchbarView @JvmOverloads constructor(
     )
 
     private fun computeLayoutMetrics(): LayoutMetrics {
-        val availableWidth = width - inset * 2 - navSize * 2 - navGap * 2 - gap * (VISIBLE_SEGMENTS - 1)
-        val availableHeight = height - inset * 2
-        val segmentSize = min(availableHeight, availableWidth / VISIBLE_SEGMENTS)
+        val availableWidth: Float
+        val availableHeight: Float
+        if (orientation == Orientation.HORIZONTAL) {
+            availableWidth = width - inset * 2 - navSize * 2 - navGap * 2 - gap * (VISIBLE_SEGMENTS - 1)
+            availableHeight = height - inset * 2
+        } else {
+            availableWidth = width - inset * 2
+            availableHeight = height - inset * 2 - navSize * 2 - navGap * 2 - gap * (VISIBLE_SEGMENTS - 1)
+        }
+        
+        val segmentSize = min(
+            if (orientation == Orientation.HORIZONTAL) availableHeight else availableWidth,
+            (if (orientation == Orientation.HORIZONTAL) availableWidth else availableHeight) / VISIBLE_SEGMENTS
+        )
         val totalWidth = segmentSize * VISIBLE_SEGMENTS + gap * (VISIBLE_SEGMENTS - 1)
-        val startX = (width - totalWidth) / 2f
-        val topY = (height - segmentSize) / 2f
+        
+        val startX = if (orientation == Orientation.HORIZONTAL) (width - totalWidth) / 2f else (width - segmentSize) / 2f
+        val topY = if (orientation == Orientation.HORIZONTAL) (height - segmentSize) / 2f else (height - totalWidth) / 2f
+        
         return LayoutMetrics(startX, topY, segmentSize, totalWidth)
     }
 
     private fun updateNavigationRects(layout: LayoutMetrics) {
-        leftNavRect.set(
-            layout.startX - navGap - navSize,
-            layout.topY + (layout.segmentSize - navSize) / 2f,
-            layout.startX - navGap,
-            layout.topY + (layout.segmentSize + navSize) / 2f
-        )
-        rightNavRect.set(
-            layout.startX + layout.totalWidth + navGap,
-            layout.topY + (layout.segmentSize - navSize) / 2f,
-            layout.startX + layout.totalWidth + navGap + navSize,
-            layout.topY + (layout.segmentSize + navSize) / 2f
-        )
+        if (orientation == Orientation.HORIZONTAL) {
+            leftNavRect.set(
+                layout.startX - navGap - navSize,
+                layout.topY + (layout.segmentSize - navSize) / 2f,
+                layout.startX - navGap,
+                layout.topY + (layout.segmentSize + navSize) / 2f
+            )
+            rightNavRect.set(
+                layout.startX + layout.totalWidth + navGap,
+                layout.topY + (layout.segmentSize - navSize) / 2f,
+                layout.startX + layout.totalWidth + navGap + navSize,
+                layout.topY + (layout.segmentSize + navSize) / 2f
+            )
+        } else {
+            leftNavRect.set(
+                layout.startX + (layout.segmentSize - navSize) / 2f,
+                layout.topY - navGap - navSize,
+                layout.startX + (layout.segmentSize + navSize) / 2f,
+                layout.topY - navGap
+            )
+            rightNavRect.set(
+                layout.startX + (layout.segmentSize - navSize) / 2f,
+                layout.topY + layout.totalWidth + navGap,
+                layout.startX + (layout.segmentSize + navSize) / 2f,
+                layout.topY + layout.totalWidth + navGap + navSize
+            )
+        }
     }
 
     private fun shiftVisibleWindow(delta: Int) {

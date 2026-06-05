@@ -88,19 +88,10 @@
                     android:textStyle="bold" />
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/landscapePadsSwitch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/setting_landscape_pads"
-                    android:textColor="#F6F7FB"
-                    android:textSize="15sp"
-                    app:useMaterialThemeColors="true" />
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/immersiveModeSwitch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
                     android:text="@string/setting_immersive_mode"
                     android:textColor="#F6F7FB"
                     android:textSize="15sp"
