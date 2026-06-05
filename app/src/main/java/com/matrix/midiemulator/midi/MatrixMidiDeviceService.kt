@@ -116,10 +116,6 @@ class MatrixMidiDeviceService : MidiDeviceService() {
         }
     }
 
-    fun isConnectedToHost(): Boolean {
-        return outputPortReceivers.isNotEmpty()
-    }
-
     fun getStatsSnapshot(): String {
         val pending = synchronized(pendingTx) { pendingTx.size }
         return "TX=$txCount RX=$rxCount Q=$pending"
