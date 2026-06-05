@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="sidebar_width">64dp</dimen>
+    <dimen name="touchbar_sidebar_width">72dp</dimen>
+    <dimen name="pad_grid_landscape_height_percent">0.96</dimen>
+</resources>
