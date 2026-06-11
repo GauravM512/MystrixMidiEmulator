@@ -38,10 +38,8 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_settings)
-
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = getString(R.string.settings_title)
 
         val immersiveModeSwitch = findViewById<SwitchMaterial>(R.id.immersiveModeSwitch)
         val showConnectionStatusSwitch = findViewById<SwitchMaterial>(R.id.showConnectionStatusSwitch)
@@ -53,11 +51,14 @@ class SettingsActivity : AppCompatActivity() {
         val importPaletteButton = findViewById<Button>(R.id.importPaletteButton)
         val resetBrightnessButton = findViewById<Button>(R.id.resetBrightnessButton)
         val githubButton = findViewById<ImageButton>(R.id.githubButton)
+        val backButton = findViewById<ImageButton>(R.id.backButton)
         val appVersionText = findViewById<TextView>(R.id.appVersionText)
         val brightnessSeekBar = findViewById<SeekBar>(R.id.brightnessSeekBar)
         val brightnessValueText = findViewById<TextView>(R.id.brightnessValueText)
         val brightnessPreviewGrid = findViewById<PadGridView>(R.id.brightnessPreviewGrid)
         appVersionText.text = getString(R.string.settings_version, getAppVersionName())
+        
+        backButton.setOnClickListener { finish() }
         immersiveModeSwitch.isChecked = AppPreferences.isImmersiveModeEnabled(this)
         showConnectionStatusSwitch.isChecked = AppPreferences.isConnectionStatusVisible(this)
         flickerReductionSwitch.isChecked = AppPreferences.isFlickerReductionEnabled(this)

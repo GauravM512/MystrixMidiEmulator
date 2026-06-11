@@ -21,6 +21,17 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
+            <ImageButton
+                android:id="@+id/backButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/settings_icon_button_background"
+                android:contentDescription="@string/settings"
+                android:padding="12dp"
+                android:src="@drawable/ic_back"
+                app:tint="#F6F7FB" />
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
