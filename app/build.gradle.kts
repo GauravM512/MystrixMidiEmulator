@@ -2,10 +2,18 @@ plugins {
     id("com.android.application")
 }
 
-val versionMajor = 1
-val versionMinor = 0
-val versionPatch = 8
-val versionBuild = 1 // Internal build number
+object AppVersion {
+    const val MAJOR = 1
+    const val MINOR = 0
+    const val PATCH = 9
+    const val BUILD = 1
+
+    const val VERSION_NAME = "$MAJOR.$MINOR.$PATCH"
+    const val VERSION_CODE = MAJOR * 1000000 +
+            MINOR * 10000 +
+            PATCH * 100 +
+            BUILD
+}
 
 android {
     namespace = "com.matrix.midiemulator"
@@ -15,8 +23,8 @@ android {
         applicationId = "com.matrix.midiemulator"
         minSdk = 23
         targetSdk = 37
-        versionCode = versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
-        versionName = "$versionMajor.$versionMinor.$versionPatch"
+        versionCode = AppVersion.VERSION_CODE
+        versionName = AppVersion.VERSION_NAME
     }
 
 
@@ -42,6 +50,7 @@ android {
         }
 
         getByName("debug") {
+            applicationIdSuffix = ".debug"
             isMinifyEnabled = false
             versionNameSuffix = "-debug"
         }
