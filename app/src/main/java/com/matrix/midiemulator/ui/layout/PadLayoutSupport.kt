@@ -18,11 +18,11 @@ internal interface PadLayout {
 }
 
 internal data class PadRenderState(
-    val padColors: IntArray,
-    val edgeColors: IntArray,
-    val cornerTopRightColor: Int,
-    val padPressed: BooleanArray,
-    val brightnessScale: Float
+    var padColors: IntArray,
+    var edgeColors: IntArray,
+    var cornerTopRightColor: Int,
+    var padPressed: BooleanArray,
+    var brightnessScale: Float
 )
 
 internal abstract class BasePadLayout(

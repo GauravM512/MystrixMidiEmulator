@@ -49,7 +49,6 @@ class PadGridView @JvmOverloads constructor(
     private val edgeColors = IntArray(EDGE_SEGMENT_COUNT) { LedPalette.OFF_COLOR }
 
     /** Launchpad top-right corner button (note 27). */
-    @Volatile
     private var cornerTopRightColor = LedPalette.OFF_COLOR
 
     private val colorLock = Any()
@@ -67,6 +66,15 @@ class PadGridView @JvmOverloads constructor(
     private var activeLayout: PadLayout = mystrixLayout
     private var brightnessScale = 1f
     private var redrawScheduled = false
+    private var lastMoveTimestamp = 0L
+
+    private val renderState = PadRenderState(
+        padColors = padColors,
+        edgeColors = edgeColors,
+        cornerTopRightColor = cornerTopRightColor,
+        padPressed = padPressed,
+        brightnessScale = brightnessScale
+    )
 
     /** Callback for MIDI events. */
     var onPadEventListener: PadEventListener? = null
@@ -103,7 +111,11 @@ class PadGridView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        activeLayout.draw(canvas, renderStateSnapshot())
+        synchronized(colorLock) {
+            renderState.brightnessScale = brightnessScale
+            renderState.cornerTopRightColor = cornerTopRightColor
+            activeLayout.draw(canvas, renderState)
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -120,6 +132,10 @@ class PadGridView @JvmOverloads constructor(
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
+                val time = System.currentTimeMillis()
+                if (time - lastMoveTimestamp < 8) return true // Throttle to ~120Hz
+                lastMoveTimestamp = time
+
                 for (i in 0 until event.pointerCount) {
                     handleTouchMove(
                         event.getPointerId(i),
@@ -146,7 +162,7 @@ class PadGridView @JvmOverloads constructor(
      * Set the LED color for an 8x8 grid pad.
      */
     fun setPadColor(note: Int, color: Int) {
-        if (note in 36..99) {
+        if (note in 0..127) {
             synchronized(colorLock) {
                 padColors[note] = color
             }
@@ -159,7 +175,9 @@ class PadGridView @JvmOverloads constructor(
      */
     fun setEdgeSegmentColor(note: Int, color: Int) {
         if (note == 27) {
-            cornerTopRightColor = color
+            synchronized(colorLock) {
+                cornerTopRightColor = color
+            }
             scheduleRedraw()
             return
         }
@@ -200,21 +218,9 @@ class PadGridView @JvmOverloads constructor(
         synchronized(colorLock) {
             padColors.fill(LedPalette.OFF_COLOR)
             edgeColors.fill(LedPalette.OFF_COLOR)
+            cornerTopRightColor = LedPalette.OFF_COLOR
         }
-        cornerTopRightColor = LedPalette.OFF_COLOR
         scheduleRedraw()
-    }
-
-    private fun renderStateSnapshot(): PadRenderState {
-        synchronized(colorLock) {
-            return PadRenderState(
-                padColors = padColors.copyOf(),
-                edgeColors = edgeColors.copyOf(),
-                cornerTopRightColor = cornerTopRightColor,
-                padPressed = padPressed,
-                brightnessScale = brightnessScale
-            )
-        }
     }
 
     private fun applyActiveLayout() {

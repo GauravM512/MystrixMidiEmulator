@@ -59,6 +59,8 @@ class TouchbarView @JvmOverloads constructor(
 
     private var selectedPage = 8
     private var visibleStartIndex = 0
+    private var cachedLayoutMetrics: LayoutMetrics? = null
+    private var lastMoveTimestamp = 0L
 
     var onTouchListener: TouchbarEventListener? = null
 
@@ -75,12 +77,17 @@ class TouchbarView @JvmOverloads constructor(
         }
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        cachedLayoutMetrics = null
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         canvas.drawColor(0xFF1A1A1A.toInt())
 
-        val layout = computeLayoutMetrics()
+        val layout = getLayoutMetrics()
         if (orientation == Orientation.HORIZONTAL) {
             barRect.set(
                 layout.startX - inset,
@@ -209,6 +216,10 @@ class TouchbarView @JvmOverloads constructor(
                 return true
             }
             MotionEvent.ACTION_MOVE -> {
+                val time = System.currentTimeMillis()
+                if (time - lastMoveTimestamp < 12) return true 
+                lastMoveTimestamp = time
+
                 for (i in 0 until event.pointerCount) {
                     val pointerId = event.getPointerId(i)
                     val currentPos = if (orientation == Orientation.HORIZONTAL) event.getY(i) else event.getX(i)
@@ -216,9 +227,6 @@ class TouchbarView @JvmOverloads constructor(
                     if (lastPos != null) {
                         val delta = currentPos - lastPos
                         if (kotlin.math.abs(delta) > touchSlop) {
-                            // In horizontal mode, Y drag shifts window. In vertical, X drag.
-                            // Actually, let's keep it simple: any swipe perpendicular to the bar? 
-                            // Or just use the logic we have.
                             shiftVisibleWindow(if (delta > 0f) -1 else 1)
                             pointerLastY[pointerId] = currentPos
                         }
@@ -271,7 +279,7 @@ class TouchbarView @JvmOverloads constructor(
     }
 
     private fun handleTouchDown(pointerId: Int, x: Float, y: Float, pressure: Float) {
-        val layout = computeLayoutMetrics()
+        val layout = getLayoutMetrics()
         updateNavigationRects(layout)
         if (leftNavRect.contains(x, y)) {
             shiftVisibleWindow(-1)
@@ -360,6 +368,10 @@ class TouchbarView @JvmOverloads constructor(
         val totalWidth: Float
     )
 
+    private fun getLayoutMetrics(): LayoutMetrics {
+        return cachedLayoutMetrics ?: computeLayoutMetrics().also { cachedLayoutMetrics = it }
+    }
+
     private fun computeLayoutMetrics(): LayoutMetrics {
         val availableWidth: Float
         val availableHeight: Float
@@ -415,8 +427,12 @@ class TouchbarView @JvmOverloads constructor(
 
     private fun shiftVisibleWindow(delta: Int) {
         val maxStart = NoteMap.TOUCHBAR_COUNT - VISIBLE_SEGMENTS
+        val old = visibleStartIndex
         visibleStartIndex = (visibleStartIndex + delta).coerceIn(0, maxStart)
-        invalidate()
+        if (old != visibleStartIndex) {
+            cachedLayoutMetrics = null
+            invalidate()
+        }
     }
 
     private fun drawNavButton(canvas: Canvas, rect: RectF, symbol: Char, enabled: Boolean) {
