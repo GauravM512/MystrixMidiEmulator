@@ -44,6 +44,7 @@ class SettingsActivity : AppCompatActivity() {
         val immersiveModeSwitch = findViewById<SwitchMaterial>(R.id.immersiveModeSwitch)
         val showConnectionStatusSwitch = findViewById<SwitchMaterial>(R.id.showConnectionStatusSwitch)
         val flickerReductionSwitch = findViewById<SwitchMaterial>(R.id.flickerReductionSwitch)
+        val edgeTouchSwitch = findViewById<SwitchMaterial>(R.id.edgeTouchSwitch)
         val launchpadIdentitySwitch = findViewById<SwitchMaterial>(R.id.launchpadIdentitySwitch)
         val layoutModeSpinner = findViewById<Spinner>(R.id.layoutModeSpinner)
         val paletteSourceSpinner = findViewById<Spinner>(R.id.paletteSourceSpinner)
@@ -62,6 +63,7 @@ class SettingsActivity : AppCompatActivity() {
         immersiveModeSwitch.isChecked = AppPreferences.isImmersiveModeEnabled(this)
         showConnectionStatusSwitch.isChecked = AppPreferences.isConnectionStatusVisible(this)
         flickerReductionSwitch.isChecked = AppPreferences.isFlickerReductionEnabled(this)
+        edgeTouchSwitch.isChecked = AppPreferences.isEdgeTouchEnabled(this)
         launchpadIdentitySwitch.isChecked = AppPreferences.isLaunchpadIdentityEnabled(this)
         val currentEffectBrightness = AppPreferences.getLedBrightnessPercent(this).coerceIn(0, 200)
         setupBrightnessPreview(brightnessPreviewGrid)
@@ -134,6 +136,10 @@ class SettingsActivity : AppCompatActivity() {
             AppPreferences.setFlickerReductionEnabled(this, isChecked)
         }
 
+        edgeTouchSwitch.setOnCheckedChangeListener { _, isChecked ->
+            AppPreferences.setEdgeTouchEnabled(this, isChecked)
+        }
+
         launchpadIdentitySwitch.setOnCheckedChangeListener { _, isChecked ->
             AppPreferences.setLaunchpadIdentityEnabled(this, isChecked)
         }
@@ -143,11 +149,15 @@ class SettingsActivity : AppCompatActivity() {
                 if (suppressLayoutModeChange) return
                 if (AppPreferences.getLayoutMode(this@SettingsActivity) == position) return
                 AppPreferences.setLayoutMode(this@SettingsActivity, position)
+                edgeTouchSwitch.visibility = if (position == AppPreferences.LAYOUT_MODE_MYSTRIX) android.view.View.VISIBLE else android.view.View.GONE
                 Toast.makeText(this@SettingsActivity, getString(R.string.setting_layout_mode_success, layoutModes[position]), Toast.LENGTH_SHORT).show()
             }
 
             override fun onNothingSelected(parent: android.widget.AdapterView<*>) = Unit
         }
+
+        // Set initial visibility of edgeTouchSwitch
+        edgeTouchSwitch.visibility = if (AppPreferences.getLayoutMode(this) == AppPreferences.LAYOUT_MODE_MYSTRIX) android.view.View.VISIBLE else android.view.View.GONE
 
         brightnessSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {

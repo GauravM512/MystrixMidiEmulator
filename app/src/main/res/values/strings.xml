@@ -11,6 +11,7 @@
     <string name="setting_immersive_mode">Immersive mode</string>
     <string name="setting_show_connection_status">Show Connection Status</string>
     <string name="setting_flicker_reduction">Flicker reduction</string>
+    <string name="setting_edge_touch">Edge Touch (Mystrix only)</string>
     <string name="setting_launchpad_identity">Use Launchpad Pro CFW identity(Beta)</string>
     <string name="setting_layout_mode">Layout mode</string>
         <string name="setting_experimental_features">Experimental Features</string>

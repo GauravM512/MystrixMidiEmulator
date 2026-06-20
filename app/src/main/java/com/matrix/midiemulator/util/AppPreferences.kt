@@ -19,6 +19,7 @@ object AppPreferences {
     private const val KEY_FLICKER_REDUCTION_ENABLED = "flicker_reduction_enabled"
     private const val KEY_IMMERSIVE_MODE = "immersive_mode"
     private const val KEY_LAUNCHPAD_CFW_IDENTITY = "launchpad_cfw_identity"
+    private const val KEY_EDGE_TOUCH_ENABLED = "edge_touch_enabled"
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -99,5 +100,13 @@ object AppPreferences {
 
     fun setConnectionStatusVisible(context: Context, visible: Boolean) {
         prefs(context).edit { putBoolean(KEY_SHOW_CONNECTION_STATUS, visible) }
+    }
+
+    fun isEdgeTouchEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_EDGE_TOUCH_ENABLED, false)
+    }
+
+    fun setEdgeTouchEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit { putBoolean(KEY_EDGE_TOUCH_ENABLED, enabled) }
     }
 }

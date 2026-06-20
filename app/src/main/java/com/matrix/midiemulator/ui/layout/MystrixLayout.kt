@@ -11,11 +11,12 @@ internal class MystrixLayout(
 ) : BasePadLayout(density, gap) {
 
     var showEdgeLights: Boolean = true
+    var edgeTouchEnabled: Boolean = false
 
     override fun recomputeMetrics(width: Int, height: Int) {
         val size = viewSize(width, height)
-        // Reserve some margin for edge touch hit areas (even if invisible)
-        val margin = 8f * density
+        // Reserve margin for edge touch hit areas only if enabled
+        val margin = if (edgeTouchEnabled) 16f * density else 0f
         gridLeft = margin
         gridTop = margin
         val effectiveSize = size - margin * 2
@@ -34,6 +35,8 @@ internal class MystrixLayout(
     override fun noteAt(x: Float, y: Float): Int? {
         val center = centerPadNoteAt(x, y)
         if (center != null) return center
+
+        if (!edgeTouchEnabled) return null
 
         // 1. Top Edge (Touch 100-107)
         if (y < gridInnerTop() && y > 0) {

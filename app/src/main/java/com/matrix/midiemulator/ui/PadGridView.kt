@@ -200,6 +200,15 @@ class PadGridView @JvmOverloads constructor(
         setLedBrightnessPercent(percent)
     }
 
+    fun setEdgeTouchEnabled(enabled: Boolean) {
+        if (mystrixLayout.edgeTouchEnabled != enabled) {
+            mystrixLayout.edgeTouchEnabled = enabled
+            if (layoutMode == GridLayoutMode.MYSTRIX) {
+                applyActiveLayout()
+            }
+        }
+    }
+
     fun setLayoutMode(mode: Int) {
         layoutMode = when (mode) {
             AppPreferences.LAYOUT_MODE_LAUNCHPAD_PRO_MK2 -> GridLayoutMode.LAUNCHPAD_PRO

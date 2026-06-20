@@ -126,6 +126,16 @@
                     android:textSize="15sp"
                     app:useMaterialThemeColors="true" />
 
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/edgeTouchSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/setting_edge_touch"
+                    android:textColor="#F6F7FB"
+                    android:textSize="15sp"
+                    android:visibility="gone"
+                    app:useMaterialThemeColors="true" />
+
 
                 <TextView
                     android:layout_width="wrap_content"

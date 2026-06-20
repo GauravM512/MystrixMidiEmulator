@@ -181,6 +181,7 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
         val hasTouchbar = layoutMode == AppPreferences.LAYOUT_MODE_MYSTRIX
 
         padGrid.setLayoutMode(layoutMode)
+        padGrid.setEdgeTouchEnabled(AppPreferences.isEdgeTouchEnabled(this))
         bridgeParser?.flickerReduction?.enabled = AppPreferences.isFlickerReductionEnabled(this)
 
         touchbarContainer.visibility = if (hasTouchbar) View.VISIBLE else View.GONE
