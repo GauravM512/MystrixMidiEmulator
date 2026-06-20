@@ -197,6 +197,13 @@ class MainActivity : AppCompatActivity(), MidiReceiver.MidiLedListener {
     private fun setupPadGrid() {
         padGrid.onPadEventListener = object : PadGridView.PadEventListener {
             override fun onPadPress(note: Int, velocity: Int) {
+                // Check if this is an edge touch that corresponds to a touchbar segment
+                val touchbarIndex = NoteMap.touchbarForNote(note)
+                if (touchbarIndex != null && ::touchbar.isInitialized) {
+                    AppPreferences.setSelectedPage(this@MainActivity, touchbarIndex + 1)
+                    touchbar.setSelectedPage(touchbarIndex + 1)
+                }
+
                 sendToHost(MidiMessageBuilder.noteOn(note, velocity))
             }
 
